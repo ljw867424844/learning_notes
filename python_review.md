@@ -211,11 +211,13 @@ sequence[start:stop:step]
 ```
 
 参数说明：
+
 - `start`：切片的起始索引（包含），默认是 `0`。
 - `stop`：切片的结束索引（不包含），默认是序列的长度。
 - `step`：切片的步长（默认为 `1`）。
 
 其特点为：
+
 - 不会修改原序列，而是返回一个新的序列。
 - 支持负索引。
 - 灵活性很高，常用于反转、跳步取值、截取子串。
@@ -370,9 +372,11 @@ g: 8
 done
 ```
 
-### 高阶函数
+### 函数式编程
 
-##### 1. map
+##### 1. 高阶函数
+
+- map函数
 
 `map(func, iterable)`
 
@@ -385,7 +389,7 @@ nums = [1, 2, 3, 4]
 print(list(map(lambda x: x*2, nums)))  # [2, 4, 6, 8]
 ```
 
-##### 2. reduce
+- reduce函数
 
 `reduce(func, iterable[, initializer])`
 
@@ -397,7 +401,7 @@ nums = [1, 2, 3, 4]
 print(reduce(lambda x, y: x+y, nums))  # 10
 ```
 
-##### 3. filter
+- filter函数
 
 `filter(func, iterable)`
 
@@ -408,7 +412,7 @@ nums = [1, 2, 3, 4, 5]
 print(list(filter(lambda x: x % 2 == 0, nums)))  # [2, 4]
 ```
 
-##### 4. sorted
+- sorted函数
 
 `sorted(iterable, key=func, reverse=False)`
 
@@ -421,7 +425,7 @@ print(sorted(['bob', 'about', 'Zoo', 'Credit'], key=str.lower, reverse=True))
 # ['Zoo', 'Credit', 'bob', 'about']
 ```
 
-##### 5. 返回函数
+##### 2. 返回函数
 
 高阶函数除了可以接受函数作为参数外，还可以把函数作为结果值返回。
 
@@ -478,7 +482,7 @@ hello()
 
 `log` 返回了 `wrapper`，替代了原始函数。
 
-**6. 装饰器**
+##### 3. 装饰器
 
 在代码运行期间动态增加功能的方式，称之为“装饰器”。它的核心是：在不改动原函数的前提下，统一修改调用行为
 
@@ -554,3 +558,293 @@ finally:
 ```
 
 `with` 就是 try/finally 的语法糖。
+
+### 面向对象编程
+
+##### 1. 类和实例
+
+类是创建实例的模板，而实例则是一个一个具体的对象，各个实例拥有的数据都互相独立，互不影响；
+
+方法就是与实例绑定的函数，和普通函数不同，方法可以直接访问实例的数据；
+
+通过在实例上调用方法，我们就直接操作了对象内部的数据，但无需知道方法内部的实现细节。
+
+值得注意的是，在 Python 里，对象的实例变量 **不需要预先声明类型**，也 **不受限制**，你可以随时给它赋值，不管是数字、字符串、列表，甚至函数、类都可以。简而言之，你可以**在运行时随时往对象里加属性，并赋予它任何数据**。
+
+```python
+class Demo:
+    pass
+
+d = Demo()
+
+# 动态绑定实例变量
+d.x = 10          # 绑定整数
+d.y = "hello"     # 绑定字符串
+d.z = [1, 2, 3]   # 绑定列表
+d.func = lambda a, b: a + b   # 绑定函数
+
+print(d.x)        # 10
+print(d.y)        # hello
+print(d.z)        # [1, 2, 3]
+print(d.func(2,3)) # 5
+```
+
+##### 2. 访问限制
+
+如果要让内部属性不被外部访问，可以把属性的名称前加上两个下划线 __ ，在Python中，实例的变量名如果以 __ 开头，就变成了一个 **私有变量（private）**，只有内部可以访问，外部不能访问。这样就确保了外部代码不能随意修改对象内部的状态，这样通过访问限制的保护，代码更加健壮。
+
+```python
+class Student(object):
+    def __init__(self, name, score):
+        self.__name = name
+        self.__score = score
+        
+    def print_score(self):
+        print('%s: %s' % (self.__name, self.__score))
+```
+
+```python
+>>> bart = Student('Bart Simpson', 59)
+>>> bart.__name
+Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+AttributeError: 'Student' object has no attribute '__name'
+```
+
+但是，如果外部代码要获取甚至修改 `name` 怎么办？此时，可以给 Student 类增加 `get_name` 和 `set_score` 这样的方法。
+
+```python
+def get_name(self):
+    return self.__name
+def set_name(self,name):
+    self.__name = name
+```
+
+##### 3. 继承和多态
+
+继承可以把父类的所有功能都直接拿过来，这样就不必从零做起，子类只需要新增自己特有的方法，也可以把父类不适合的方法覆盖重写。
+
+对于静态语言（例如Java）来说，如果需要传入 Animal 类型，则传入的对象必须是 Animal 类型或者它的子类，否则，将无法调用 `run()` 方法。 对于 Python 这样的动态语言来说，则不一定需要传入 Animal 类型。我们只需要保证传入的对象有一个 `run()` 方法就可以了：
+
+```python
+def Timer():
+    def run(self):
+        print('Start...')
+```
+
+这就是动态语言的“鸭子类型”，它并不要求严格的继承体系，是一种“按行为来认定类型”的方式。一个对象只要“看起来像鸭子，走起 路来像鸭子”，那它就可以被看做是鸭子。
+
+##### 4. 获取对象信息
+
+- 使用 `Type()` 函数
+
+基本类型都可以用 `type()` 判断，如果一个变量指向函数或者类，也可以用 `type()` 判断。
+
+```python
+>>> type(123)
+<class 'int'>
+>>> type('str')
+<class 'str'>
+>>> type(None)
+<type(None) 'NoneType'>
+>>> type(abs)
+<class 'builtin_function_or_method'>
+>>> type(a)
+<class '__main__.Animal'>
+```
+
+- 使用 `isinstance()` 函数
+
+`isinstance()` 判断的是一个对象是否是该类型本身，或者位于该类型的父继承链上。
+
+```python
+>>> a = Animal()
+>>> d = Dog()
+>>> h = Husky()
+>>> isinstance(h, Husky)
+True
+>>> isinstance(h, Dog)
+True
+>>> isinstance(h, Animal)
+True
+>>> isinstance(d, Husky)
+False
+```
+
+能用 `type()` 判断的基本类型也可以用 `isinstance()` 判断。
+
+```python
+>>> isinstance('a', str)
+True
+>>> isinstance(123, int)
+True
+>>> isinstance(b'a', bytes)
+True
+```
+
+并且还可以判断一个变量是否是某些类型中的一种，比如下面的代码就可以判断是否是 list 或者 tuple。
+
+```python
+>>> isinstance([1, 2, 3], (list, tuple))
+True
+>>> isinstance((1, 2, 3), (list, tuple))
+True
+```
+
+- 使用 `dir()` 函数
+
+使用 `dir()` 函数，可以获得一个对象的所有属性和方法，它返回一个包含字符串的 list。
+
+```python
+>>> dir('ABCDEFG')
+['__add__', '__class__',..., '__subclasshook__', 'capitalize','casefold',..., 'zfill']
+```
+
+类似 `__xxx__` 的属性和方法在 Python 中都是有特殊用途的，比如 `__len__` 方法返回长度。在 Python 中，如果你调用 `len()` 函数试图获取一个对象的长度，实际上，在 `len()` 函数内部， 它自动去调用该对象的 `__len__()` 方法，所以，下面的代码是等价的：
+
+```python
+>>> len('ABC')
+3
+>>> 'ABC'.__len__()
+3
+```
+
+##### 5. 示例属性和类属性
+
+由于 Python 是动态语言，根据类创建的示例可以任意绑定属性。
+
+**给实例绑定属性** 的方法是通过实例变量（前面已演示），或者通过 self 变量，如下：
+
+```python
+class Student(object):
+    def __init__(self, name):
+        self.name = name
+
+s = Student('Bob')
+```
+
+但是，如果 Student 类本身需要绑定一个属性呢？可以直接在 class 中定义属性，这种属性是类属性，归 Student 类所有：
+
+```python
+class Student(object):
+    name = 'Student'
+```
+
+当我们定义了一个类属性后，这个属性虽然归类所有，但类的所有实例都可以访问到。来测试一 下：
+
+```python
+>>> class Student(object):
+...     name = 'Student'
+...
+>>> s = Student() # 创建实例s
+>>> print(s.name) # 打印name属性，因为实例并没有name属性，所以会继续查找class的name属性
+Student
+>>> print(Student.name) # 打印类的name属性
+Student
+>>> s.name = 'Michael' # 给实例绑定name属性
+>>> print(s.name) # 由于实例属性优先级比类属性高，因此，它会屏蔽掉类的name属性
+Michael
+>>> print(Student.name) # 但是类属性并未消失，用Student.name仍然可以访问
+Student
+>>> del s.name # 如果删除实例的name属性
+>>> print(s.name) # 再次调用s.name，由于实例的name属性没有找到，类的name属性就显示出来了
+Student
+```
+
+实例属性属于各个实例所有，互不干扰； 类属性属于类所有，所有实例共享一个属性；
+
+不要对实例属性和类属性使用相同的名字，否则将产生难以发现的错误。
+
+### 面向对象高级编程
+
+##### 1. 使用 `__slots__`
+
+Python 允许在定义 class 的时候，定义一个特殊的 `__slots__` 变量， 来限制该 class 实例能添加的属性：
+
+```python
+class Student(object):
+    __slots__ = ('name', 'age') # 用tuple定义允许绑定的属性名称
+```
+
+然后，可以试一试：
+
+```python
+>>> s = Student() # 创建新的实例
+>>> s.name = 'Michael' # 绑定属性'name'
+>>> s.age = 25 # 绑定属性'age'
+>>> s.score = 99 # 绑定属性'score'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'Student' object has no attribute 'score'
+```
+
+使用 `__slots__` 要注意， `__slots__` 定义的属性仅对当前类实例起作用，对继承的子类是不 起作用的。
+
+##### 2. 使用 `@property`
+
+再给示例绑定属性的时候，如果我们直接把属性暴露出去，虽然写起来很简单，但是，没办法检查参数，导致可以把成绩随意修改。
+
+这显然不合逻辑。为了限制 score 的范围，可以通过一个 `set_score()` 方法来设置成绩，再通过一个 `get_score()` 来获取成绩，这样，在 `set_score()` 方法里，就可以检查参数：
+
+```python
+class Student(object):
+    def get_score(self):
+        return self._score
+    def set_score(self, value):
+        if not isinstance(value, int):
+            raise ValueError('score must be an integer!')
+        if value < 0 or value > 100:
+            raise ValueError('score must between 0 ~ 100!')
+        self._score = value
+
+```
+
+但是，上面的调用方法又略显复杂，没有直接用属性这么直接简单。
+
+`@property` 用于把方法伪装成属性，写法更自然。并且可以结合 `.setter` 和 `.deleter` 来控制属性的修改和删除。
+
+```python
+class Student(object):
+    @property
+    def score(self):
+        return self._score
+    @score.setter
+    def score(self, value):
+        if not isinstance(value, int):
+            raise ValueError('score必须是一个整数!')
+        if value < 0 or value > 100:
+            raise ValueError('score必须在0~100!')
+        self._score = value
+    @score.deleter
+    def score(self):
+        print("删除score属性")
+        del self._score
+```
+
+调用的方式如下：
+
+```python
+s = Student()
+s.score = 99 # setter
+print(s.score) # getter
+del s.score # deleter
+```
+
+还可以定义只读属性，只定义 getter 方法，不定义 setter 方法就是一个只读属性：
+
+```python
+class Student:
+    @property
+    def birth(self):
+        return self._birth
+    @birth.setter
+    def birth(self,value):
+        self._birth = value
+    @property
+    def age(self):
+        return 2025 - self.birth
+```
+
+上面的 birth 是可读写属性，而 age 就是一个只读属性，因为 age 可以根据 birth 和当前时间计算出来。
+
+注意：属性方法名和实例变量重名，会造成递归调用，导致栈溢出报错！
