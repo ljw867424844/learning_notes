@@ -1429,3 +1429,44 @@ class TestDict(unittest.TestCase):
 - 单元测试代码要非常简单，如果测试代码太复杂，那么测试代码本身就可能有bug。
 - 单元测试通过了并不意味着程序就没有bug了，但是不通过程序肯定有bug。
 
+##### 4. 文档测试
+
+当我们编写注释时，如果写上这样的注释，无疑明确地告诉函数的调用者该函数的期望输入和输出：
+
+```python
+def abs(n):
+ '''
+ Function to get absolute value of number.
+
+ >>> abs(1)
+ 1
+ >>> abs(-1)
+ 1
+ >>> abs(0)
+ 0
+ '''
+ return n if n >= 0 else (-n)
+```
+
+Python内置的“文档测试”（doctest）模块可以直接提取注释中的代码并执行测试。
+
+doctest严格按照Python交互式命令行的输入和输出来判断测试结果是否正确。只有测试异常的时候，可以用 `...` 表`示中间一大段烦人的输出。
+
+当模块正常导入时，doctest不会被执行。只有在命令行直接运行时，才执 行doctest。所以，不必担心doctest会在非测试环境下执行。
+
+```python
+if __name__ == '__main__':
+	import doctest
+	doctest.testmod()
+```
+
+运行结果为什么输出也没有，这说明我们编写的doctest运行都是正确的。
+
+【小结】
+
+doctest非常有用，不但可以用来测试，还可以直接作为示例代码。通过某些文档生成工具，就可以自动把包含doctest的注释提取出来。用户看文档的时候，同时也看到了doctest。
+
+
+
+
+
