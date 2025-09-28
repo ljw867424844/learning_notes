@@ -1464,9 +1464,110 @@ if __name__ == '__main__':
 
 【小结】
 
-doctest非常有用，不但可以用来测试，还可以直接作为示例代码。通过某些文档生成工具，就可以自动把包含doctest的注释提取出来。用户看文档的时候，同时也看到了doctest。
+doctest不但可以用来测试，还可以直接作为示例代码。通过某些文档生成工具，就可以自动把包含doctest的注释提取出来。用户看文档的时候，同时也看到了doctest。
 
+### IO编程
 
+##### 1. 文件读写
 
+首先是读文件，可以使用Python内置的 `open()` 函数，传入文件名和标示符：
 
+```python
+>>> f = open('/Users/michael/test.txt', 'r')
+```
 
+其中， `'r'` 表示只读，这样就成功地打开了一个文件。
+
+若文件不存在， `open()` 函数就会抛出一个 `IOError` 的错误：
+
+```python
+>>> f = open('/Users/michael/notfound.txt', 'r')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+FileNotFoundError: [Errno 2] No such file or directory:
+'/Users/michael/notfound.txt'
+```
+
+如果文件打开成功，接下来，调用 `read()` 方法可以一次读取文件的全部内容，Python把内容读到内存，用一个 `str` 对象表示：
+
+```python
+>>> f.read()
+'Hello, world!'
+```
+
+最后一步是调用 `close()` 方法关闭文件。文件使用完毕后必须关闭，因为文件对象会占用操作系统的资源，并且操作系统同一时间能打开的文件数量也是有限的： 
+
+```python
+>>> f.close()
+```
+
+由于文件读写时都有可能产生 `IOError` ，一旦出错，后面的 `f.close()` 就不会调用。所以，为了保证无论是否出错都能正确地关闭文件，我们可以使用 `try ... finally` 来实现：
+
+```python
+try:
+	f = open('/path/to/file', 'r')
+ 	print(f.read())
+finally:
+	if f:
+		f.close()
+```
+
+但是每次都这么写实在太繁琐，所以，Python引入了 `with` 语句（语法糖）来自动帮我们调用 `close()` 方法：
+
+```python
+with open('/path/to/file', 'r') as f: 
+    print(f.read())
+```
+
+读取方式也有多种，可以根据需要决定怎么调用：
+
+- 调用 `read()` 会一次性读取文件的全部内容
+- 调用 `read(size)` 方法，每次最多读取size个字节的内容
+- 调用 `readline()` 每次读取一行内容
+- 调用 `readlines()` 一次读取所有内容并按行返回 `list` 
+
+如果文件很小， `read()` 一次性读取最方便；如果不能确定文件大小，反复调用 `read(size)` 比较保险；如果是配置文件，调用 `readlines()` 最方便：
+
+```python
+for line in f.readlines():
+	print(line.strip()) # 把末尾的'\n'删掉
+```
+
+值得一提的是，前面讲的默认都是读取 **文本文件** ，并且是UTF-8编码的文本文件。要读取 **二进制文件** ，比如图 片、视频等等，用 `'rb'` 模式打开文件即可：
+
+```python
+>>> f = open('/Users/michael/test.jpg', 'rb')
+>>> f.read()
+b'\xff\xd8\xff\xe1\x00\x18Exif\x00\x00...' # 十六进制表示的字节
+```
+
+要读取非UTF-8编码的文本文件，需要给 `open()` 函数传入 `encoding` 参数，例如，读取GBK编码的文件：
+
+```python
+>>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk')
+>>> f.read()
+'测试'
+```
+
+遇到有些编码不规范的文件，可能会遇到 `UnicodeDecodeError` ，因为在文本文件中可能夹杂了一些非法编码的字符。遇到这种情况，`open()` 函数还接收一个 `errors` 参数，表示如果遇到编码错误后如何处理。最简单的方式是直接忽略：
+
+```python
+>>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk', errors='ignore')
+```
+
+再来说说写文件，其与读文件是一样的，唯一区别是调用 `open()` 函数时，传入标识符 `'w'` 或者 `'wb'` 表示写文本文件或写二进制文件：
+
+```python
+>>> f = open('/Users/michael/test.txt', 'w')
+>>> f.write('Hello, world!')
+>>> f.close()
+```
+
+你可以反复调用 `write()` 来写入文件，但是务必要调用 `f.close()` 来关闭文件。当我们写文件时，操作系统往往不会立刻把数据写入磁盘，而是放到内存缓存起来，空闲的时候再慢慢写入。只有调用 `close()` 方法时，操作系统才保证把没有写入的数据全部写入磁盘。忘记调用 `close()` 的后果是数据可能只写了一部分到磁盘，剩下的丢失了。所以，还是用 `with` 语句来得保险：
+
+```python
+with open('/Users/michael/test.txt', 'w') as f:
+	f.write('Hello, world!')
+```
+
+此外，要写入特定编码的文本文件，请给 `open()` 函数传入 `encoding` 参数，将字符串自动转换成指定编码。以 `'w'` 模式写入文件时，如果文件已存在，会直接覆盖（相当于删掉后新写入一个文件）。如果我们希望追加到文件末尾，可以传入 `'a'` 以追加（append）模式写入。
