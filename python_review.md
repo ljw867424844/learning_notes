@@ -1571,3 +1571,88 @@ with open('/Users/michael/test.txt', 'w') as f:
 ```
 
 此外，要写入特定编码的文本文件，请给 `open()` 函数传入 `encoding` 参数，将字符串自动转换成指定编码。以 `'w'` 模式写入文件时，如果文件已存在，会直接覆盖（相当于删掉后新写入一个文件）。如果我们希望追加到文件末尾，可以传入 `'a'` 以追加（append）模式写入。
+
+##### 2. 操作文件和目录
+
+操作文件和目录的函数一部分放在 `os` 模块中，一部分放在 `os.path` 模块中。查看、创建和删除目录可以这么调用：
+
+```python
+# 查看当前目录的绝对路径:
+>>> os.path.abspath('.')
+'/Users/michael'
+# 在某个目录下创建一个新目录，首先把新目录的完整路径表示出来:
+>>> os.path.join('/Users/michael', 'testdir')
+'/Users/michael/testdir'
+# 然后创建一个目录:
+>>> os.mkdir('/Users/michael/testdir')
+# 删掉一个目录:
+>>> os.rmdir('/Users/michael/testdir')
+```
+
+注意，把两个路径合成一个时，不要直接拼字符串，而要通过 `os.path.join()` 函数，这样可以正确处理不同操作系统的路径分隔符。
+
+同样的道理，要拆分路径时，也不要直接去拆字符串，而要通过 `os.path.split()` 函数，这样可以把一个路径拆分为两部分，后一部分总是最后级别的目录或文件名：
+
+```python
+>>> os.path.split('/Users/michael/testdir/file.txt')
+('/Users/michael/testdir', 'file.txt')
+```
+
+`os.path.splitext()` 可以直接让你得到文件扩展名，返回一个元组，这在很多时候非常方便：
+
+```python
+>>> os.path.splitext('/path/to/file.txt')
+('/path/to/file', '.txt')
+```
+
+这些合并、拆分路径的函数并不要求目录和文件要真实存在，它们只对字符串进行操作。
+
+利用Python的特性来过滤文件。比如我们要列出当前目录下的所有目录，只需要一行代码：
+
+```python
+>>> [x for x in os.listdir('.') if os.path.isfile(x) and os.path.splitext(x)[1] == '.py']
+['xxx.py', ...]
+```
+
+##### 3. 序列化
+
+我们把变量从内存中变成可存储或传输的过程称之为序列化，在Python中叫pickling，在其他语言中也被称之为serialization，marshalling，flattening等等，都是一个意思。 序列化之后，就可以把序列化后的内容写入磁盘，或者通过网络传输到别的机器上。 
+
+反过来，把变量内容从序列化的对象重新读到内存里称之为反序列化，即unpickling。
+
+Python提供了 `pickle` 模块来实现序列化。 
+
+- `pickle.dumps()` 方法把任意obj序列化成一个bytes，然后，就可以把这个bytes写入文件。
+
+```python
+import pickle
+
+data = {"name": "Alice", "age": 25, "scores": [95, 88, 76]}
+serialized = pickle.dumps(d)
+print(serialized)
+```
+
+- 或者用另一个方法 `pickle.dump()` 直接把对象序列化后写入一个file-like Object：
+
+```python
+with open("data.txt", "wb") as f:
+	pickle.dump(data, f)
+```
+
+- 反序列化，可以使用`pickle.load()` 方法从文件中读取对象：
+
+```python
+import pickle
+
+with open("data.pkl", "rb") as f:
+    loaded_data = pickle.load(f)
+print(loaded_data)
+```
+
+- 也可以通过`pickle.loads(bytes_obj)` 方法从字节串恢复对象：
+
+```python
+restored = pickle.loads(serialized)
+print(restored)
+```
+
