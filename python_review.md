@@ -1611,7 +1611,7 @@ with open('/Users/michael/test.txt', 'w') as f:
 
 Python提供了 `pickle` 模块来实现序列化： 
 
-- `pickle.dumps()` 方法把任意obj序列化成一个bytes，然后，就可以把这个bytes写入文件。
+- `pickle.dumps()` 方法把任意obj序列化成一个bytes。
 
 ```python
 import pickle
@@ -1656,7 +1656,9 @@ Python内置的 `json` 模块提供了非常完善的从 **对象** 到 **JSON**
 '{"age": 20, "score": 88, "name": "Bob"}'
 ```
 
-对中文进行JSON序列化时， `json.dumps()` 提供了一个 `ensure_ascii` 参数：
+- json模块的 ` dumps()` 方法返回一个 `str` ，内容就是标准的JSON。
+
+值得一提的是，对中文进行JSON序列化时， `json.dumps()` 提供了一个 `ensure_ascii` 参数：
 
 ```python
 import json
@@ -1666,19 +1668,31 @@ s = json.dumps(obj, ensure_ascii=True)
 print(s)
 ```
 
-`json.dumps()` 默认假设所有字符串都要用 **ASCII 编码**。 因此，所有非 ASCII 字符（例如中文、表情符号等）都会被 **转义** 成 `\uXXXX` 的形式。如果你想让 JSON 中显示真正的中文，而不是 Unicode 转义，就可以设置：
+`json.dumps()` 默认假设所有字符串都要用 **ASCII 编码**。 因此，所有非 ASCII 字符（例如中文、表情符号等）都会被 **转义** 成 `\uXXXX` 的形式。如果你想让JSON中显示真正的中文，而不是Unicode转义，就可以设置：
 
 ```python
 json.dumps(obj, ensure_ascii=False)
 ```
 
-`dumps()` 方法返回一个 `str` ，内容就是标准的JSON。 `dump()` 方法可以直接把 JSON写入一个 `file-like Object` 。
+- json模块的 `dump()` 方法可以直接把 JSON写入一个 `file-like Object` 。
+
+```python
+>>> import json
+>>> data = {'name':'Bob', 'age':20, 'score':88}
+>>> with open('data.json','w') as f:
+... ... json.dump(data,f)
+... 
+```
 
 反过来，要把JSON反序列化为Python对象，用 `loads()` 或者对应的 `load()` 方法，前者把JSON的字符串反序列化，后者从 `file-like Object` 中读取字符串并反序列化：
 
 ```python
 >>> json_str = '{"age": 20, "score": 88, "name": "Bob"}'
 >>> json.loads(json_str)
+{'age': 20, 'score': 88, 'name': 'Bob'}
+>>> with open("data.json", "r") as f:
+... ... json.load(f)
+... 
 {'age': 20, 'score': 88, 'name': 'Bob'}
 ```
 
@@ -1696,36 +1710,250 @@ class Student(object):
 stu = Student('Bob', 20, 88)
 
 # 方法一：手动转为 dict，最简单、最常用的方法。
-stu_dict = {"name": stu.name, "age": stu.age}
+stu_dict = {"name": stu.name, "age": stu.age, "score": stu.score}
 json_str = json.dumps(stu_dict)
 print(json_str)
 
-# 方法二：使用 __dict__ 自动转成字典，Python 对象内部都有一个 __dict__ 属性，用于存储实例变量。
+# 方法二：使用 __dict__ 自动转成字典，Python对象内部都有一个 __dict__ 属性，用于存储实例变量。
 json_str = json.dumps(stu.__dict__)
 print(json_str)
 
 # 方法三：使用 default 参数
-def stu2dict(s):
+def student2dict(s):
 	return {'name': s.name,'age': s.age,'score': s.score}
-json_str = json.dumps(stu, default=stu2dict)
+json_str = json.dumps(stu, default=student2dict)
 print(json_str)
 ```
 
 同样的道理，如果我们要把JSON反序列化为一个 `Student` 对象实例， `loads()` 方法首先转换出一个 `dict` 对象，然后，我们传入的 `object_hook` 函数负责把 `dict` 转换为 `Student` 实例：
 
 ```python
-def dict2stu(d):
-	return Student(d['name'], d['age'], d['score'])
-```
-
-运行的结果如下：
-
-```python
+>>> def dict2student(d):
+... ... return Student(d['name'], d['age'], d['score'])
+...
 >>> json_str = '{"age": 20, "score": 88, "name": "Bob"}'
->>> print(json.loads(json_str, object_hook=dict2stu))
+>>> print(json.loads(json_str, object_hook=dict2student))
 <__main__.Student object at 0x10cd3c190>
 ```
 
 【小结】
 
 Python语言特定的序列化模块是 `pickle` ，但如果要把序列化搞得更通用、更符合Web标准， 就可以使用 `json` 模块。 `json` 模块的 `dumps()` 和 `loads()` 函数是定义得非常好的接口的典范。当我们使用时，只需要传入一个必须的参数。但是，当默认的序列化或反序列机制不满足我们的要求时，我们又可以传入更多的参数来定制序列化或反序列化的规则，既做到了接口简单易用，又做到了充分的扩展性和灵活性。
+
+### 进程和线程
+
+##### 1. 多进程
+
+Unix/Linux操作系统提供了一个 `fork()` 系统调用，它非常特殊。普通的函数调用，调用一次， 返回一次，但是 `fork()` 调用一次，返回两次，因为操作系统自动把当前进程（称为父进程）复制了一份（称为子进程），然后，分别在父进程和子进程内返回。 子进程永远返回 0 ，而父进程返回子进程的ID。这样做的理由是，一个父进程可以fork出很多子进程，所以，父进程要记下每个子进程的ID，而子进程只需要调用 `getppid()` 就可以拿到父进程的ID。
+
+有了 `fork` 调用，一个进程在接到新任务时就可以复制出一个子进程来处理新任务，常见的Apache服务器就是由父进程监听端口，每当有新的http请求时，就 `fork` 出子进程来处理新的http请求。
+
+Windows系统没有fork调用，但是，Python提供了 **multiprocessing模块** 用于多进程并发编程，一个 `Process` 类来代表一个进程对象，下面的例子演示了启动 一个子进程并等待其结束：
+
+```python
+from multiprocessing import Process
+import os
+
+# 子进程要执行的代码
+def run_proc(name):
+	print('Run child process %s (%s)...' % (name, os.getpid()))
+
+if __name__=='__main__':
+    print('Parent process %s.' % os.getpid())
+ 	p = Process(target=run_proc, args=('test',))
+ 	print('Child process will start.')
+ 	p.start()
+ 	p.join()
+ 	print('Child process end.')
+```
+
+运行结果如下：
+
+```python
+Parent process 936.
+Child process will start.
+Run child process test (937)...
+Child process end.
+```
+
+- 创建子进程时，只需要传入一个执行函数和函数的参数，创建一个 `Process` 实例，用 `start()` 方法启动。
+-  `join()` 方法可以等待子进程结束后再继续往下运行，通常用于进程间的同步。
+
+如果要启动大量的子进程，可以用 **进程池** 的方式批量创建子进程：
+
+```python
+from multiprocessing import Pool
+import os, time, random
+
+def long_time_task(name):
+    print('Run task %s (%s)...' % (name, os.getpid()))
+    start = time.time()
+    time.sleep(random.random() * 3)
+    end = time.time()
+    print('Task %s runs %0.2f seconds.' % (name, (end - start)))
+
+if __name__=='__main__':
+    print('Parent process %s.' % os.getpid())
+    p = Pool(4)
+    for i in range(5):
+        p.apply_async(long_time_task, args=(i+1,))
+    print('Waiting for all subprocesses done...')
+    p.close()
+    p.join()
+    print('All subprocesses done.')
+```
+
+运行结果如下：
+
+```python
+Parent process 3.
+Run task 3 (5)...
+Task 3 runs 0.46 seconds.
+Run task 1 (4)...
+Task 1 runs 0.49 seconds.
+Run task 2 (6)...
+Task 2 runs 0.20 seconds.
+Run task 5 (6)...
+Task 5 runs 2.27 seconds.
+Run task 4 (7)...
+Task 4 runs 0.30 seconds.
+Waiting for all subprocesses done...
+All subprocesses done.
+```
+
+对 `Pool` 对象调用 `join()` 方法会等待所有子进程执行完毕，调用 `join()` 之前必须先调用 `close()` ，调用 `close()` 之后就不能继续添加新的 `Process` 了。 
+
+请注意输出的结果，task `1` ， `2` ， `3` ， `4` 是立刻执行的，而task `5` 要等待前面某个task完成后才执行，这是因为 `Pool` 的默认大小在我的电脑上是4，因此，最多同时执行4个进程。这是 `Pool` 有意设计的限制，并不是操作系统的限制。如果改成：`p = Pool(5)` ，就可以同时跑5个进程。
+
+由于 `Pool` 的默认大小是CPU的核数，如果你拥有8核CPU，你要提交至少9个子进程才能看到上面的等待效果。
+
+Process 之间肯定是需要通信的，操作系统提供了很多机制来实现 **进程间的通信（IPC）** 。Python的 `multiprocessing` 模块包装了底层的机制，提供了 `Queue` 、 `Pipes` 等多种方式来交换数据。 我们以 `Queue` 为例，在父进程中创建两个子进程，一个往 `Queue` 里写数据，一个从 `Queue` 里读数据：
+
+```python
+from multiprocessing import Process, Queue
+import os, time, random
+
+# 写数据进程执行的代码:
+def write(q):
+    print('Process to write: %s' % os.getpid())
+    for value in ['A', 'B', 'C']:
+        print('Put %s to queue...' % value)
+        q.put(value)
+        time.sleep(random.random())
+
+# 读数据进程执行的代码:
+def read(q):
+    print('Process to read: %s' % os.getpid())
+    while True:
+        value = q.get(True)
+        print('Get %s from queue.' % value)
+
+if __name__ == '__main__':
+    # 父进程创建Queue，并传给各个子进程：
+    q = Queue()
+    pw = Process(target=write, args=(q,))
+    pr = Process(target=read, args=(q,))
+    # 启动子进程pw，写入:
+    pw.start()
+    # 启动子进程pr，读取:
+    pr.start()
+    # 等待pw结束:
+    pw.join()
+    # pr进程里是死循环，无法等待其结束，只能强行终止:
+    pr.terminate()
+```
+
+运行结果为：
+
+```python
+Process to write: 12756
+Put A to queue...
+Process to read: 4564
+Get A from queue.
+Put B to queue...
+Get B from queue.
+Put C to queue...
+Get C from queue.
+```
+
+【小结】
+
+在Unix/Linux下，可以使用 `fork()` 调用实现多进程。 要实现跨平台的多进程，可以使用 `multiprocessing` 模块。 进程间通信是通过 `Queue` 、 `Pipes` 等实现的。
+
+##### 2. 多线程
+
+我们前面提到了进程是由若干线程组成的，一个进程至少有一个线程。 由于线程是操作系统直接支持的执行单元，因此，高级语言通常都内置多线程的支持，Python也不例外，并且，Python的线程是真正的Posix Thread，而不是模拟出来的线程。 
+
+Python的标准库提供了两个模块： `_thread` 和 `threading` ， `_thread` 是低级模块， `threading` 是高级模块，对 `_thread` 进行了封装。绝大多数情况下，我们只需要使用 `threading` 这个高级模块。
+
+启动一个线程就是把一个函数传入并创建 `Thread` 实例，然后调用 `start()` 开始执行：
+
+```python
+import time, threading
+
+# 新线程执行的代码:
+def loop():
+    print('thread %s is running...' % threading.current_thread().name)
+    n = 0
+    while n < 5:
+        n = n + 1
+        print('thread %s >>> %s' % (threading.current_thread().name, n))
+        time.sleep(1)
+    print('thread %s ended.' % threading.current_thread().name)
+
+print('thread %s is running...' % threading.current_thread().name)
+t = threading.Thread(target=loop, name='LoopThread')
+t.start()
+t.join()
+print('thread %s ended.' % threading.current_thread().name)
+```
+
+执行结果如下：
+
+```python
+thread MainThread is running...
+thread LoopThread is running...
+thread LoopThread >>> 1
+thread LoopThread >>> 2
+thread LoopThread >>> 3
+thread LoopThread >>> 4
+thread LoopThread >>> 5
+thread LoopThread ended.
+thread MainThread ended.
+```
+
+由于任何进程默认就会启动一个线程，我们把该线程称为 **主线程** ，主线程又可以启动新的线程， Python的 `threading` 模块有个 `current_thread()` 函数，它永远返回当前线程的实例。主线程实例的名字叫 `MainThread` ，子线程的名字在创建时指定，我们用 `LoopThread` 命名子线程。 名字仅仅在打印时用来显示，完全没有其他意义，如果不起名字Python就自动给线程命名为 `Thread-1` ， `Thread-2` , ……
+
+多线程和多进程最大的不同在于，多进程中，同一个变量，各自有一份拷贝存在于每个进程中， 互不影响，而多线程中，所有变量都由所有线程共享，所以，任何一个变量都可以被任何一个线程修改，因此，线程之间共享数据最大的危险在于多个线程同时改一个变量，把内容给改乱了。
+
+如果我们要确保数据计算正确，就要给线程上一把锁，当某个线程开始执行时，我们说，该线程因为获得了锁，因此其他线程不能同时执行，只能等待，直到锁被释放后，获得该锁以后才能改。由于锁只有一个，无论多少线程，同一时刻最多只有一个线程持有该锁，所以，不会造成修改的冲突。创建一个锁是通过 `threading.Lock()` 来实现的：
+
+```python
+balance = 0
+lock = threading.Lock()
+def run_thread(n):
+    for i in range(100000):
+        # 先要获取锁:
+        lock.acquire()
+        try:
+            # 放心地改吧:
+            change_it(n)
+        finally:
+            # 改完了一定要释放锁:
+            lock.release()
+```
+
+当多个线程同时执行 `lock.acquire()` 时，只有一个线程能成功地获取锁，然后继续执行代码， 其他线程就继续等待直到获得锁为止。 获得锁的线程用完后一定要释放锁，否则那些苦苦等待锁的线程将永远等待下去，成为死线程。 所以我们用 `try...finally` 来确保锁一定会被释放。
+
+锁的好处就是确保了某段关键代码只能由一个线程从头到尾完整地执行，坏处当然也很多，首先是阻止了多线程并发执行，包含锁的某段代码实际上只能以单线程模式执行，**效率就大大地下降了**。其次，由于可以存在多个锁，不同的线程持有不同的锁，并试图获取对方持有的锁时，**可能会造成死锁**，导致多个线程全部挂起，既不能执行，也无法结束，只能靠操作系统强制终止。
+
+Python的线程虽然是真正的线程，但解释器执行代码时，有一个**GIL锁**：Global Interpreter Lock，任何Python线程执行前，必须先获得GIL锁，然后，每执行100条字节码，解释器就自动释放GIL锁，让别的线程有机会执行。这个GIL全局锁实际上把所有线程的执行代码都给上了锁， 所以，多线程在Python中只能交替执行，即使100个线程跑在100核CPU上，也只能用到1个核。
+
+GIL是Python解释器设计的历史遗留问题，通常我们用的解释器是官方实现的CPython，要真正利用多核，除非重写一个不带GIL的解释器。
+
+所以，在Python中，可以使用多线程，但不要指望能有效利用多核。如果一定要通过多线程利用 多核，那只能通过C扩展来实现，不过这样就失去了Python简单易用的特点。 不过，也不用过于担心，Python虽然不能利用多线程实现多核任务，但可以通过多进程实现多核任务。多个Python进程有各自独立的GIL锁，互不影响。
+
+【小结】
+
+多线程编程，模型复杂，容易发生冲突，必须用锁加以隔离，同时，又要小心死锁的发生。 Python解释器由于设计时有GIL全局锁，导致了多线程无法利用多核。
+
