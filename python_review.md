@@ -1476,7 +1476,7 @@ doctest不但可以用来测试，还可以直接作为示例代码。通过某�
 >>> f = open('/Users/michael/test.txt', 'r')
 ```
 
-其中， `'r'` 表示只读，这样就成功地打开了一个文件。
+其中，标示符 `'r'` 表示只读，这样就成功地打开了一个文件。
 
 若文件不存在， `open()` 函数就会抛出一个 `IOError` 的错误：
 
@@ -1484,11 +1484,10 @@ doctest不但可以用来测试，还可以直接作为示例代码。通过某�
 >>> f = open('/Users/michael/notfound.txt', 'r')
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
-FileNotFoundError: [Errno 2] No such file or directory:
-'/Users/michael/notfound.txt'
+FileNotFoundError: [Errno 2] No such file or directory:'/Users/michael/notfound.txt'
 ```
 
-如果文件打开成功，接下来，调用 `read()` 方法可以一次读取文件的全部内容，Python把内容读到内存，用一个 `str` 对象表示：
+如果文件打开成功，接下来我们可以调用 `read()` 方法，一次读取文件的全部内容，Python把内容读到内存，用一个 `str` 对象表示：
 
 ```python
 >>> f.read()
@@ -1541,19 +1540,11 @@ for line in f.readlines():
 b'\xff\xd8\xff\xe1\x00\x18Exif\x00\x00...' # 十六进制表示的字节
 ```
 
-要读取非UTF-8编码的文本文件，需要给 `open()` 函数传入 `encoding` 参数，例如，读取GBK编码的文件：
+注意：每次调用 `f.read(size)` 都会从上次读取的位置继续往后读。操作文件指针位置的方法有：
 
-```python
->>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk')
->>> f.read()
-'测试'
-```
+- `f.tell()`：返回当前读取位置。
 
-遇到有些编码不规范的文件，可能会遇到 `UnicodeDecodeError` ，因为在文本文件中可能夹杂了一些非法编码的字符。遇到这种情况，`open()` 函数还接收一个 `errors` 参数，表示如果遇到编码错误后如何处理。最简单的方式是直接忽略：
-
-```python
->>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk', errors='ignore')
-```
+- `f.seek(offset)`：移动文件指针。
 
 再来说说写文件，其与读文件是一样的，唯一区别是调用 `open()` 函数时，传入标识符 `'w'` 或者 `'wb'` 表示写文本文件或写二进制文件：
 
@@ -1570,26 +1561,26 @@ with open('/Users/michael/test.txt', 'w') as f:
 	f.write('Hello, world!')
 ```
 
-此外，要写入特定编码的文本文件，请给 `open()` 函数传入 `encoding` 参数，将字符串自动转换成指定编码。以 `'w'` 模式写入文件时，如果文件已存在，会直接覆盖（相当于删掉后新写入一个文件）。如果我们希望追加到文件末尾，可以传入 `'a'` 以追加（append）模式写入。
+以 `'w'` 模式写入文件时，如果文件已存在，会直接覆盖。如果我们希望追加到文件末尾，可以传入 `'a'` 以追加模式写入。
 
 ##### 2. 操作文件和目录
 
-操作文件和目录的函数一部分放在 `os` 模块中，一部分放在 `os.path` 模块中。查看、创建和删除目录可以这么调用：
+操作文件和目录的函数一部分放在 `os` 模块中，一部分放在 `os.path` 模块中。**查看、创建和删除目录**可以这么调用：
 
 ```python
-# 查看当前目录的绝对路径:
+# 1.查看当前目录的绝对路径:
 >>> os.path.abspath('.')
 '/Users/michael'
-# 在某个目录下创建一个新目录，首先把新目录的完整路径表示出来:
+# 2.把新目录的完整路径表示出来:
 >>> os.path.join('/Users/michael', 'testdir')
 '/Users/michael/testdir'
-# 然后创建一个目录:
+# 3.然后创建一个目录:
 >>> os.mkdir('/Users/michael/testdir')
-# 删掉一个目录:
+# 4.删掉一个目录:
 >>> os.rmdir('/Users/michael/testdir')
 ```
 
-注意，把两个路径合成一个时，不要直接拼字符串，而要通过 `os.path.join()` 函数，这样可以正确处理不同操作系统的路径分隔符。
+注意，把两个路径合成一个时，**不要直接拼字符串**，而要通过 `os.path.join()` 函数，这样可以正确处理不同操作系统的路径分隔符。
 
 同样的道理，要拆分路径时，也不要直接去拆字符串，而要通过 `os.path.split()` 函数，这样可以把一个路径拆分为两部分，后一部分总是最后级别的目录或文件名：
 
@@ -1598,29 +1589,27 @@ with open('/Users/michael/test.txt', 'w') as f:
 ('/Users/michael/testdir', 'file.txt')
 ```
 
-`os.path.splitext()` 可以直接让你得到文件扩展名，返回一个元组，这在很多时候非常方便：
+`os.path.splitext()` 可以直接让你得到**文件扩展名**，返回一个**元组**，这在很多时候非常方便：
 
 ```python
 >>> os.path.splitext('/path/to/file.txt')
 ('/path/to/file', '.txt')
 ```
 
-这些合并、拆分路径的函数并不要求目录和文件要真实存在，它们只对字符串进行操作。
+注意，这些合并、拆分路径的函数并不要求目录和文件要真实存在，它们只对字符串进行操作。
 
-利用Python的特性来过滤文件。比如我们要列出当前目录下的所有目录，只需要一行代码：
+利用Python的特性来过滤文件。比如我们要列出当前目录下的所有py文件，只需要一行代码：
 
 ```python
->>> [x for x in os.listdir('.') if os.path.isfile(x) and os.path.splitext(x)[1] == '.py']
+>>> [x for x in os.listdir('.') if os.path.splitext(x)[1] == '.py']
 ['xxx.py', ...]
 ```
 
 ##### 3. 序列化
 
-我们把变量从内存中变成可存储或传输的过程称之为序列化，在Python中叫pickling，在其他语言中也被称之为serialization，marshalling，flattening等等，都是一个意思。 序列化之后，就可以把序列化后的内容写入磁盘，或者通过网络传输到别的机器上。 
+我们把变量从内存中变成可存储或传输的过程称之为序列化，在Python中叫pickling，在其他语言中也被称之为serialization，marshalling，flattening等等，都是一个意思。 序列化之后，就可以把序列化后的内容写入磁盘，或者通过网络传输到别的机器上。 反过来，把变量内容从序列化的对象重新读到内存里称之为反序列化，即unpickling。
 
-反过来，把变量内容从序列化的对象重新读到内存里称之为反序列化，即unpickling。
-
-Python提供了 `pickle` 模块来实现序列化。 
+Python提供了 `pickle` 模块来实现序列化： 
 
 - `pickle.dumps()` 方法把任意obj序列化成一个bytes，然后，就可以把这个bytes写入文件。
 
@@ -1628,14 +1617,14 @@ Python提供了 `pickle` 模块来实现序列化。
 import pickle
 
 data = {"name": "Alice", "age": 25, "scores": [95, 88, 76]}
-serialized = pickle.dumps(d)
+serialized = pickle.dumps(data)
 print(serialized)
 ```
 
-- 或者用另一个方法 `pickle.dump()` 直接把对象序列化后写入一个file-like Object：
+- 或者用另一个方法 `pickle.dump()` 直接把对象序列化后写入文件：
 
 ```python
-with open("data.txt", "wb") as f:
+with open("data.pkl", "wb") as f:
 	pickle.dump(data, f)
 ```
 
@@ -1649,10 +1638,94 @@ with open("data.pkl", "rb") as f:
 print(loaded_data)
 ```
 
-- 也可以通过`pickle.loads(bytes_obj)` 方法从字节串恢复对象：
+- 也可以通过`pickle.loads(bytes_obj)` 方法从字节串恢复到对象：
 
 ```python
 restored = pickle.loads(serialized)
 print(restored)
 ```
 
+Pickle只能用于Python，并且可能不同版本的Python彼此都不兼容。如果我们要在不同的编程语言之间传递对象，就必须把对象序列化为标准格式，比如XML，但更好的方法是序列化为JSON，因为JSON表示出来就是一个字符串，可以被所有语言读取，也可以方便地存储到磁盘或者通过网络传输。JSON不仅是标准格式，并且比XML更快，而且可以直接在Web页面中读取，非常方便。
+
+Python内置的 `json` 模块提供了非常完善的从 **对象** 到 **JSON** 的转换：
+
+```python
+>>> import json
+>>> data = {'name':'Bob', 'age':20, 'score':88}
+>>> json.dumps(data)
+'{"age": 20, "score": 88, "name": "Bob"}'
+```
+
+对中文进行JSON序列化时， `json.dumps()` 提供了一个 `ensure_ascii` 参数：
+
+```python
+import json
+
+obj = dict(name='小明', age=20)
+s = json.dumps(obj, ensure_ascii=True)
+print(s)
+```
+
+`json.dumps()` 默认假设所有字符串都要用 **ASCII 编码**。 因此，所有非 ASCII 字符（例如中文、表情符号等）都会被 **转义** 成 `\uXXXX` 的形式。如果你想让 JSON 中显示真正的中文，而不是 Unicode 转义，就可以设置：
+
+```python
+json.dumps(obj, ensure_ascii=False)
+```
+
+`dumps()` 方法返回一个 `str` ，内容就是标准的JSON。 `dump()` 方法可以直接把 JSON写入一个 `file-like Object` 。
+
+反过来，要把JSON反序列化为Python对象，用 `loads()` 或者对应的 `load()` 方法，前者把JSON的字符串反序列化，后者从 `file-like Object` 中读取字符串并反序列化：
+
+```python
+>>> json_str = '{"age": 20, "score": 88, "name": "Bob"}'
+>>> json.loads(json_str)
+{'age': 20, 'score': 88, 'name': 'Bob'}
+```
+
+Python的 `dict` 对象可以直接序列化为JSON格式，不过，很多时候，我们更喜欢用 `class` 表示对象，比如定义 `Student` 类，然后序列化：
+
+```python
+import json
+
+class Student(object):
+	def __init__(self, name, age, score):
+		self.name = name
+ 		self.age = age
+ 		self.score = score
+
+stu = Student('Bob', 20, 88)
+
+# 方法一：手动转为 dict，最简单、最常用的方法。
+stu_dict = {"name": stu.name, "age": stu.age}
+json_str = json.dumps(stu_dict)
+print(json_str)
+
+# 方法二：使用 __dict__ 自动转成字典，Python 对象内部都有一个 __dict__ 属性，用于存储实例变量。
+json_str = json.dumps(stu.__dict__)
+print(json_str)
+
+# 方法三：使用 default 参数
+def stu2dict(s):
+	return {'name': s.name,'age': s.age,'score': s.score}
+json_str = json.dumps(stu, default=stu2dict)
+print(json_str)
+```
+
+同样的道理，如果我们要把JSON反序列化为一个 `Student` 对象实例， `loads()` 方法首先转换出一个 `dict` 对象，然后，我们传入的 `object_hook` 函数负责把 `dict` 转换为 `Student` 实例：
+
+```python
+def dict2stu(d):
+	return Student(d['name'], d['age'], d['score'])
+```
+
+运行的结果如下：
+
+```python
+>>> json_str = '{"age": 20, "score": 88, "name": "Bob"}'
+>>> print(json.loads(json_str, object_hook=dict2stu))
+<__main__.Student object at 0x10cd3c190>
+```
+
+【小结】
+
+Python语言特定的序列化模块是 `pickle` ，但如果要把序列化搞得更通用、更符合Web标准， 就可以使用 `json` 模块。 `json` 模块的 `dumps()` 和 `loads()` 函数是定义得非常好的接口的典范。当我们使用时，只需要传入一个必须的参数。但是，当默认的序列化或反序列机制不满足我们的要求时，我们又可以传入更多的参数来定制序列化或反序列化的规则，既做到了接口简单易用，又做到了充分的扩展性和灵活性。
