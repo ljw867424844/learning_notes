@@ -2146,6 +2146,189 @@ else:
 ('010', '8086')
 ```
 
+### 常用内建模块
+
+##### 1. datetime
+
+`datetime` 是Python处理日期和时间的标准库。
+
+- 获取当前日期和时间：
+
+```python
+>>> from datetime import datetime
+>>> now = datetime.now() # 获取当前datetime
+>>> print(now)
+2025-10-10 15:55:00.006017
+>>> print(type(now))
+<class 'datetime.datetime'>
+```
+
+其中，`datetime.now()` 返回当前日期和时间，其类型是 `datetime` 。
+
+- 获取指定日期和时间：
+
+```python
+>>> from datetime import datetime
+>>> dt = datetime(2025, 11, 11, 11, 11) # 用指定日期时间创建datetime
+>>> print(dt)
+2025-11-11 11:11:00
+```
+
+- datetime转换为timestamp（调用 `timestamp()` 方法）：
+
+```python
+from datetime import datetime
+
+dt = datetime(2025, 10, 11, 10, 30, 0)
+ts = dt.timestamp()
+print(ts)
+```
+
+Python的timestamp是一个浮点数，整数位表示秒。 而某些编程语言（如Java和JavaScript）的timestamp使用整数表示毫秒数，这种情况下只需要把timestamp除以1000就得到Python的浮点表示方法。
+
+- timestamp转换为datetime：
+
+方法 1（转换为本地时间）：`datetime.fromtimestamp(ts)`
+
+方法 2（转换为UTC时间）：`datetime.utcfromtimestamp(ts)`
+
+本地时间是指当前操作系统设定的时区。例如北京时区是东8区，则本地时间：
+
+```python
+2025-10-10 16:00:00 
+```
+
+实际上就是UTC+8:00时区的时间：
+
+```python
+2025-10-10 16:00:00 UTC+8:00
+```
+
+而此刻的格林威治标准时间与北京时间差了8小时，也就是UTC+0:00时区的时间应该是：
+
+```python
+2025-10-10 08:00:00 UTC+0:00
+```
+
+- str转换为datetime：
+
+很多时候，用户输入的日期和时间是字符串，要处理日期和时间，首先必须把str转换为datetime。转换方法是通过 `datetime.strptime()` 实现，需要一个日期和时间的格式化字符串：
+
+```python
+>>> from datetime import datetime
+>>> cday = datetime.strptime('2025-12-12 12:12:12', '%Y-%m-%d %H:%M:%S')
+>>> print(cday)
+2025-12-12 12:12:12
+```
+
+转换后的datetime是没有时区信息的，字符串 `'%Y-%m-%d %H:%M:%S'` 规定了日期和时间部分的格式。
+
+- datetime转换为str：
+
+如果已经有了datetime对象，要把它格式化为字符串显示给用户，就需要转换为str，转换方法是通过 `strftime()` 实现的，同样需要一个日期和时间的格式化字符串：
+
+```python
+>>> from datetime import datetime
+>>> dt = datetime(2025, 10, 11, 10, 30, 0)
+>>> print(dt.strftime('%Y-%m-%d %H:%M:%S'))
+2025-10-11 10:30:00
+```
+
+- datetime加减
+
+ 第一种：`datetime` 加减 `timedelta`
+
+```python
+>>> from datetime import datetime, timedelta
+>>> dt = datetime(2025, 10, 11, 14, 30, 0)
+>>> dt
+datetime.datetime(2025, 10, 11, 14, 30)
+>>> new_dt = dt + timedelta(days=5, hours=3)
+>>> new_dt
+datetime.datetime(2025, 10, 16, 17, 30)
+>>> new_dt2 = dt - timedelta(days=2, minutes=15)
+>>> new_dt2
+datetime.datetime(2025, 10, 9, 14, 15)
+```
+
+第二种：`datetime` 之间的减法
+
+```python
+from datetime import datetime
+
+dt1 = datetime(2025, 10, 11, 14, 30, 0)
+dt2 = datetime(2025, 10, 8, 10, 0, 0)
+delta = dt1 - dt2
+print(delta)	# 3 days, 4:30:00
+print(delta.days, "天")	# 3 天
+print(delta.total_seconds(), "秒")	# 275400.0 秒
+```
+
+- 时区转换
+
+第一步：给 `datetime` 添加时区
+
+```python
+from datetime import datetime, timezone, timedelta
+
+# 当前 UTC 时间（无时区）
+naive_utc = datetime.utcnow()
+
+# 强制设置为 UTC+0（添加 tzinfo，不做时间偏移）
+utc_dt = naive_utc.replace(tzinfo=timezone.utc)
+print(utc_dt)
+# 2025-10-11 09:57:52.083032+00:00
+```
+
+注意： `.replace(tzinfo=...)` 只是“标记”当前对象属于哪个时区，不改变时间数值。它不会做任何时间换算。
+
+第二步：转换时区
+
+```python
+# 转换为北京时间（UTC+8）
+bj_dt = utc_dt.astimezone(timezone(timedelta(hours=8)))
+print(bj_dt)
+# 2025-10-11 17:58:24.301177+08:00
+
+# 转换为东京时间（UTC+0）
+tokyo_dt = utc_dt.astimezone(timezone(timedelta(hours=9)))
+print(tokyo_dt)
+# 2025-10-11 18:58:40.350467+09:00
+```
+
+Python 会把 `utc_dt` 转成 `timestamp` ，再用目标时区重新表达出来。时间点相同，但显示的本地时间不同。
+
+再试试把北京时间转成东京时间，时间与上面一致，因为两者都表示同一个 UTC 时刻：
+
+```python
+# 把北京时间转成东京时间
+tokyo_dt2 = bj_dt.astimezone(timezone(timedelta(hours=9)))
+print(tokyo_dt2)
+# 2025-10-11 18:59:07.875657+09:00
+```
+
+【小结】
+
+`datetime` 表示的时间需要时区信息才能确定一个特定的时间，否则只能视为本地时间。
+
+如果要存储 `datetime` ，最佳方法是将其转换为timestamp（调用 `timestamp()` 方法实现）再存储，因为timestamp的值与时区完全无关。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
