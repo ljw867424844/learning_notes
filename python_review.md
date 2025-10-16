@@ -2313,9 +2313,407 @@ print(tokyo_dt2)
 
 如果要存储 `datetime` ，最佳方法是将其转换为timestamp（调用 `timestamp()` 方法实现）再存储，因为timestamp的值与时区完全无关。
 
+##### 2. collections
+
+`collections` 模块提供了一些有用的集合类，可以根据需要选用。
+
+- namedtuple
+
+`namedtuple()` 函数用来创建一个自定义的tuple对象，并且规定了tuple元素的个数，并可以用属性而不是索引来引用tuple的某个元素。
+
+```python
+>>> from collections import namedtuple
+>>> Point = namedtuple('Point', ['x', 'y'])
+>>> p = Point(1, 2)
+>>> p.x
+1
+>>> p.y
+2
+```
+
+这样一来，我们用 `namedtuple` 可以很方便地定义一种数据类型，它具备tuple的不变性，又可以 **根据属性来引用**，使用十分方便。
+
+- deque
+
+使用 `list` 存储数据时，按索引访问元素很快，但是插入和删除元素就很慢了，因为 `list` 是线性存储，数据量大的时候，插入和删除效率很低。
+
+而 `deque` 是为了高效实现插入和删除操作的双向列表，适合用于队列和栈：
+
+```python
+>>> from collections import deque
+>>> q = deque(['a', 'b', 'c'])
+>>> q.append('x')
+>>> q.appendleft('y')
+>>> q
+deque(['y', 'a', 'b', 'c', 'x'])
+```
+
+`deque` 除了实现list的 `append() `和 `pop()` 外，还支持 `appendleft()` 和 `popleft()` ，这 样就可以非常高效地往头部添加或删除元素。
+
+- defaultdict
+
+使用 `dict` 时，如果引用的Key不存在，就会抛出 `KeyError` 。如果希望key不存在时，返回一个默认值，就可以用 `defaultdict` ：
+
+```python
+>>> from collections import defaultdict
+>>> dd = defaultdict(lambda: 'N/A')
+>>> dd['key1'] = 'abc'
+>>> dd['key1'] # key1存在
+'abc'
+>>> dd['key2'] # key2不存在，返回默认值
+'N/A'
+```
+
+注意：默认值是调用函数返回的，而函数在创建 `defaultdict` 对象时传入。 除了在Key不存在时返回默认值， `defaultdict` 的其他行为跟 `dict` 是完全一样的。
+
+- OrderedDict
+
+使用 `dict` 时，Key是无序的。在对 `dict` 做迭代时，我们无法确定Key的顺序。 如果要保持Key的顺序，可以用 `OrderedDict` ：
+
+```python
+>>> from collections import OrderedDict
+>>> d = dict([('a', 1), ('b', 2), ('c', 3)])
+>>> d # dict的Key是无序的
+{'a': 1, 'c': 3, 'b': 2}
+>>> od = OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+>>> od # OrderedDict的Key是有序的
+OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+```
+
+注意， `OrderedDict` 的Key会按照插入的顺序排列，不是Key本身排序：
+
+```python
+>>> od = OrderedDict()
+>>> od['z'] = 1
+>>> od['y'] = 2
+>>> od['x'] = 3
+>>> list(od.keys()) # 按照插入的Key的顺序返回
+['z', 'y', 'x']
+```
+
+利用 `OrderedDict` 可以实现一个FIFO（先进先出）的dict，当容量超出限制时，先删除最早添加的Key：
+
+```python
+from collections import OrderedDict
+
+class FIFODict(OrderedDict):
+    def __init__(self, capacity):
+        super().__init__()
+        self.capacity = capacity  # 最大容量
+
+    def __setitem__(self, key, value):
+        # 如果 key 已存在，先删除它（避免位置不对）
+        if key in self:
+            del self[key]
+        # 插入新的键值对（会放在末尾）
+        OrderedDict.__setitem__(self, key, value)
+        # 如果超过容量，弹出最早插入的一个
+        if len(self) > self.capacity:
+            oldest = next(iter(self))  # 第一个键
+            self.pop(oldest)
+            
+fifo = FIFODict(3)
+
+fifo['a'] = 1
+fifo['b'] = 2
+fifo['c'] = 3
+print(fifo)  # OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+
+fifo['d'] = 4  # 超过容量，自动删除最早的 'a'
+print(fifo)  # OrderedDict([('b', 2), ('c', 3), ('d', 4)])
+```
+
+- ChainMap
+
+`ChainMap` 可以把一组 `dict` 串起来并组成一个逻辑上的 `dict` 。 `ChainMap` 本身也是一个 `dict`，但是查找的时候，会按照顺序在内部的 `dict` 依次查找。
+
+什么时候使用 `ChainMap` 最合适？举个例子：应用程序往往都需要传入参数，参数可以通过命令行传入，可以通过环境变量传入，还可以有默认参数。我们可以用 `ChainMap` 实现参数的优先级查找，即先查命令行参数，如果没有传入，再查环境变量，如果还是没有，就使用默认参数。
+
+```python
+from collections import ChainMap
+import os, argparse
+
+# 构造缺省参数:
+defaults = {
+ 'color': 'red',
+ 'user': 'guest'
+}
+
+# 构造命令行参数:
+parser = argparse.ArgumentParser()
+parser.add_argument('-u', '--user')
+parser.add_argument('-c', '--color')
+namespace = parser.parse_args()
+command_line_args = { k: v for k, v in vars(namespace).items() if v }
+
+# 组合成ChainMap:
+combined = ChainMap(command_line_args, os.environ, defaults)
+
+# 打印参数:
+print('color=%s' % combined['color'])
+print('user=%s' % combined['user'])
+```
+
+没有任何参数时，打印出默认参数：
+
+```
+D:\PythonProject\general>python use_chainmap.py
+color=red
+user=guest
+```
+
+传入命令行参数运行，优先使用命令行参数：
+
+```
+D:\PythonProject\general>python use_chainmap.py -u alice -c blue
+color=blue
+user=alice
+```
+
+传入环境变量运行：
+
+```
+D:\PythonProject\general>set user=bob
+
+D:\PythonProject\general>set color=green
+
+D:\PythonProject\general>python use_chainmap.py
+color=green
+user=bob
+```
+
+同时传入命令行参数和环境变量，命令行参数的优先级较高：
+
+```
+D:\PythonProject\general>set user=mike
+
+D:\PythonProject\general>set color=pink
+
+D:\PythonProject\general>python use_chainmap.py -u alice -c blue
+color=blue
+user=alice
+```
+
+##### 3. argparse
+
+使用 `argparse` 解析参数，只需定义好参数类型，就可以获得有效的参数输入，能大大简化获取命令行参数的工作。
+
+假设我们想编写一个备份MySQL数据库的命令行程序，需要输入的参数如下：
+
+- host参数：表示MySQL主机名或IP，不输入则默认为 localhost ；
+- port参数：表示MySQL的端口号，int类型，不输入则默认为 3306 ；
+- user参数：表示登录MySQL的用户名，必须输入；
+- password参数：表示登录MySQL的口令，必须输入；
+- gz参数：表示是否压缩备份文件，不输入则默认为 False ；
+- outfile参数：表示备份文件保存在哪，必须输入。
+
+其中， `outfile` 是位置参数，而其他则是类似 `--user root` 这样的“关键字”参数。 
+
+用 `argparse` 来解析参数，一个完整的示例如下：
+
+```python
+import argparse
+
+def main():
+    # 定义 ArgumentParser 实例
+    parser = argparse.ArgumentParser(
+        prog='backup',  # 程序名
+        description='Backup MySQL database.',  # 描述
+        epilog='Copyright (r), 2023'  # 说明信息
+    )
+
+    # 可选参数
+    parser.add_argument('--host', default='localhost', help="主机名或 IP 地址")
+    parser.add_argument('--port', default=3306, type=int, help="端口号")
+    parser.add_argument('-u', '--user', required=True, help="用户名")
+    parser.add_argument('-p', '--password', required=True, help="密码")
+    parser.add_argument('--database', required=True, help="数据库名称")
+    parser.add_argument('-gz', '--gzcompress', required=False, action='store_true', help='是否压缩备份文件 (.gz 格式)')
+
+    # 位置参数（必须输入）
+    parser.add_argument('outfile', help="备份文件保存路径")
+
+    # 解析参数
+    args = parser.parse_args()
+
+    # 打印参数
+    print('Parsed arguments:')
+    print(f'outfile     = {args.outfile}')
+    print(f'host        = {args.host}')
+    print(f'port        = {args.port}')
+    print(f'user        = {args.user}')
+    print(f'password    = {args.password}')
+    print(f'database    = {args.database}')
+    print(f'gzcompress  = {args.gzcompress}')
 
 
+if __name__ == '__main__':
+    main()
+```
 
+输入有效的参数，则程序能解析出所需的所有参数：
+
+```
+D:\PythonProject\general>python backup.py -u root -p 123456 --database testdb backup.sql
+Parsed arguments:
+outfile     = backup.sql
+host        = localhost
+port        = 3306
+user        = root
+password    = 123456
+database    = testdb
+gzcompress  = False
+```
+
+缺少必要的参数，或者参数不对，将报告详细的错误信息：
+
+```
+D:\PythonProject\general>python backup.py --database testdb backup.sql
+usage: backup [-h] [--host HOST] [--port PORT] -u USER -p PASSWORD --database DATABASE [-gz] outfile
+backup: error: the following arguments are required: -u/--user, -p/--password
+```
+
+更神奇的是，如果输入 `-h` ，则打印帮助信息：
+
+```
+D:\PythonProject\general>python backup.py -h
+usage: backup [-h] [--host HOST] [--port PORT] -u USER -p PASSWORD --database DATABASE [-gz] outfile
+
+Backup MySQL database.
+
+positional arguments:
+  outfile               备份文件保存路径
+
+options:
+  -h, --help            show this help message and exit
+  --host HOST           主机名或 IP 地址
+  --port PORT           端口号
+  -u, --user USER       用户名
+  -p, --password PASSWORD
+                        密码
+  --database DATABASE   数据库名称
+  -gz, --gzcompress     是否压缩备份文件 (.gz 格式)
+
+Copyright (r), 2023
+```
+
+获取有效参数的代码实际上是这一行：
+
+```python
+args = parser.parse_args()
+```
+
+我们不必捕获异常， `parse_args()` 非常方便的一点在于，如果参数有问题，则它打印出错误信息后，结束进程；如果参数是 `-h` ，则它打印帮助信息后，结束进程。只有当参数全部有效时， 才会返回一个NameSpace对象，获取对应的参数就把参数名当作属性获取，非常方便。 
+
+##### 4. base64
+
+Base64 是一种编码方式，用于把二进制数据（比如图片、文件、字节流）转换成只包含 ASCII 字符的文本字符串。它接收一串 字节，把它编码成另一串字节，只是这串新字节中每个字节对应的是 ASCII 可打印字符。
+
+Base64的原理很简单，首先，准备一个包含64个字符的数组：
+
+```python
+['A', 'B', 'C', ... 'a', 'b', 'c', ... '0', '1', ... '+', '/']
+```
+
+然后，对二进制数据进行处理，把3字节的二进制数据编码为4字节的文本数据，长度增加33%，好处是编码后的文本数据可以在邮件正文、网页等直接显示。
+
+如果要编码的二进制数据不是3的倍数，最后会剩下1个或2个字节怎么办？Base64用 `\x00` 字节在末尾补足后，再在编码的末尾加上1个或2个 `=` 号，表示补了多少字节，解码的时候，会自动去掉。
+
+Python内置的 `base64` 可以直接进行base64的编解码：
+
+```python
+>>> import base64
+>>> base64.b64encode(b'hello world')
+b'aGVsbG8gd29ybGQ='
+>>> base64.b64decode(b'aGVsbG8gd29ybGQ=')
+b'hello world'
+```
+
+由于标准的Base64编码后可能出现字符 `+` 和 `/` ，在URL中就不能直接作为参数，所以又有一种"url safe"的base64编码，其实就是把字符 `+` 和 `/` 分别变成 `-` 和 `_` ：
+
+```python
+>>> base64.b64encode(b'i\xb7\x1d\xfb\xef\xff')
+b'abcd++//'
+>>> base64.urlsafe_b64encode(b'i\xb7\x1d\xfb\xef\xff')
+b'abcd--__'
+>>> base64.urlsafe_b64decode('abcd--__')
+b'i\xb7\x1d\xfb\xef\xff'
+```
+
+Base64适用于小段内容的编码，比如数字证书签名、Cookie的内容等。
+
+##### 5. struct
+
+`struct` 模块是Python标准库中的一个 **用于在Python的数据类型（如整数、浮点数、字符串等）与 C语言风格的二进制数据之间进行转换** 的模块。
+
+- 打包整数与浮点数
+
+```python
+>>> import struct
+>>> data = struct.pack('i f s', 42, 3.14, b'A')
+>>> data
+b'*\x00\x00\x00\xc3\xf5H@A'
+```
+
+其中：`'i'` 表示一个 4 字节的整数 (int)，`'f'` 表示一个 4 字节的浮点数 (float)，`'s'` 表示一个字节串 (string)
+
+- 解包二进制数据
+
+```python
+>>> import struct
+>>> data = b'*\x00\x00\x00\xc3\xf5H@A'
+>>> result = struct.unpack('i f s', data)
+>>> result
+(42, 3.140000104904175, b'A')
+```
+
+- 常用格式字符
+
+| 格式字符 | 类型          | 字节大小   |
+| -------- | ------------- | ---------- |
+| `b`      | 有符号字符    | 1          |
+| `B`      | 无符号字符    | 1          |
+| `h`      | 短整型        | 2          |
+| `H`      | 无符号短整型  | 2          |
+| `i`      | 整型          | 4          |
+| `I`      | 无符号整型    | 4          |
+| `f`      | 浮点型        | 4          |
+| `d`      | 双精度浮点型  | 8          |
+| `s`      | 字符串        | 按长度决定 |
+| `p`      | Pascal 字符串 | 按长度决定 |
+| `?`      | 布尔值        | 1          |
+
+- 字节序控制（大小端）
+
+在格式字符串的开头可以指定字节序（endianness）：
+
+| 前缀 | 含义               |
+| ---- | ------------------ |
+| `@`  | 本机字节序（默认） |
+| `=`  | 本机标准字节序     |
+| `<`  | 小端（低位在前）   |
+| `>`  | 大端（高位在前）   |
+| `!`  | 网络字节序（大端） |
+
+Windows的位图文件（.bmp）是一种非常简单的文件格式，BMP格式采用小端方式存储数据，文件头的结构按顺序如下： 
+
+两个字节： `'BM'` 表示Windows位图， `'BA'` 表示OS/2位图； 一个4字节整数：表示位图大小； 一个4字节整数：保留位，始终为0； 一个4字节整数：实际图像的偏移量； 一个4字节整数：Header的字节数； 一个4字节整数：图像宽度； 一个4字节整数：图像高度； 一个2字节整数：始终为1； 一个2字节整数：颜色数。
+
+组合起来用 `unpack` 读取：
+
+```python
+>>> s = b'\x42\x4d\x38\x8c\x0a\x00\x00\x00\x00\x00\x36\x00\x00\x00\x28\x00\x00\x00\x80\x02\x00\x00\x68\x01\x00\x00\x01\x00\x18\x00'
+>>> struct.unpack('<ccIIIIIIHH', s)
+(b'B', b'M', 691256, 0, 54, 40, 640, 360, 1, 24)
+```
+
+结果显示， `b'B'` 、 `b'M'` 说明是Windows位图，位图大小为640x360，颜色数为24。
+
+##### 6. hashlib
+
+Python的 `hashlib` 提供了常见的哈希算法，如MD5，SHA1等等。
+
+哈希算法通过哈希函数 `hash(data)` 对任意长度的数据 `data` 计算出固定长度的哈希 `digest` ，目的是为了发现原始数据是否被人篡改过。 哈希算法之所以能指出数据是否被篡改过，就是因为哈希函数是一个单向函数，计算 `digest=hash(data)` 很容易，但通过 `digest` 反推 `data` 却非常困难。而且，对原始数据做一个bit的修改，都会导致计算出的哈希完全不同。
 
 
 
