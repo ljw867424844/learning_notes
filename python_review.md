@@ -2797,6 +2797,148 @@ def calc_md5(password):
 
 哈希算法在很多地方都有广泛的应用。要注意哈希算法不是加密算法，不能用于加密（因为无法 通过哈希反推明文），只能用于防篡改，但是它的单向计算特性决定了可以在不存储明文口令的情况下验证用户口令。
 
+##### 7. hmac
+
+为了防止黑客通过彩虹表根据哈希值反推原始口令，在计算哈希的时候，不能仅针对原始输入计算，需要增加一个salt来使得相同的输入也能得到不同的哈希，这样，大大增加了黑客破解的难度。
+
+如果salt是我们自己随机生成的，通常我们计算MD5时采用 md5(message + salt) 。但实际上，把salt看做一个“口令”，加salt的哈希就是：计算一段message的哈希时，根据不同口令计算出不同的哈希。要验证哈希值，必须同时提供正确的口令。这实际上就是Hmac算法：Keyed-Hashing for Message Authentication。它通过一个标准算 法，在计算哈希的过程中，把key混入计算过程中。
+
+和我们自定义的加salt算法不同，Hmac算法针对所有哈希算法都通用，无论是MD5还是SHA1。采用Hmac替代我们自己的salt算法，可以使程序算法更标准化，也更安全。
+
+Python自带的hmac模块实现了标准的Hmac算法，下面我们来看看如何使用hmac实现带key的哈希。
+
+我们首先需要准备待计算的原始消息message，随机key，哈希算法，这里采用MD5，使用hmac的代码如下：
+
+```python
+>>> import hmac
+>>> message = b'Hello, world!'
+>>> key = b'secret'
+>>> h = hmac.new(key, message, digestmod='MD5')
+>>> # 如果消息很长，可以多次调用h.update(msg)
+>>> h.hexdigest()
+'fa4ee7d173f2d97ee79022d1a7355bcf'
+```
+
+可见使用hmac和普通hash算法非常类似。hmac输出的长度和原始哈希算法的长度一致。需要注意传入的key和message都是bytes类型，str类型需要首先编码为bytes。
+
+【小结】
+
+Python内置的hmac模块实现了标准的Hmac算法，它利用一个key对message计算“杂凑”后的hash，使用hmac算法比标准hash算法更安全，因为针对相同的message，不同的key会产生不同的hash。
+
+##### 8. itertools
+
+Python的内建模块 `itertools` 提供了非常有用的用于操作迭代对象的函数。
+
+首先来看看 `itertools` 提供的几个“无限”迭代器：
+
+- `count()` 会创建一个无限的迭代器
+
+```python
+>>> import itertools
+>>> natuals = itertools.count(1)
+>>> for n in natuals:
+...     print(n)
+...
+1
+2
+3
+...
+```
+
+- `cycle()` 会把传入的一个序列无限重复下去
+
+```python
+>>> import itertools
+>>> cs = itertools.cycle('ABC') # 注意字符串也是序列的一种
+>>> for c in cs:
+... print(c)
+...
+'A'
+'B'
+'C'
+'A'
+'B'
+'C'
+...
+```
+
+- `repeat()` 负责把一个元素无限重复下去，不过如果提供第二个参数就可以限定重复次数
+
+```python
+>>> ns = itertools.repeat('A', 3)
+>>> for n in ns:
+... print(n)
+...
+A
+A
+A
+```
+
+无限序列只有在 for 迭代时才会无限地迭代下去，如果只是创建了一个迭代对象，它不会事先把无限个元素生成出来，事实上也不可能在内存中创建无限多个元素。
+
+无限序列虽然可以无限迭代下去，但是通常我们会通过 `takewhile()` 等函数根据条件判断来截取出一个有限的序列：
+
+```python
+>>> natuals = itertools.count(1)
+>>> ns = itertools.takewhile(lambda x: x <= 10, natuals)
+>>> list(ns)
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+```
+
+此外，`itertools` 提供的几个迭代器操作函数更加有用：
+
+- `chain()` 可以把一组迭代对象串联起来，形成一个更大的迭代器：
+
+```python
+>>> import itertools
+>>> for c in itertools.chain('ABC', 'XYZ'):
+...     print(c)
+...
+A
+B
+C
+X
+Y
+Z
+>>>
+```
+
+- `groupby()` 把迭代器中相邻的重复元素挑出来放在一起：
+
+```python
+>>> import itertools
+>>> for key, group in itertools.groupby('ABBCCCAAAA'):
+...     print(key, list(group))
+...
+A ['A']
+B ['B', 'B']
+C ['C', 'C', 'C']
+A ['A', 'A', 'A', 'A']
+```
+
+实际上挑选规则是通过函数完成的，只要作用于函数的两个元素返回的值相等，这两个元素就被认为是在一组的，而函数返回值作为组的key。如果我们要忽略大小写分组，就可以让元素 'A' 和 'a' 都返回相同的key：
+
+```python
+>>> import itertools
+>>> for key, group in itertools.groupby('AaaBBbcCAAa', lambda x: x.upper()):
+...     print(key, list(group))
+...
+A ['A', 'a', 'a']
+B ['B', 'B', 'b']
+C ['c', 'C']
+A ['A', 'A', 'a']
+```
+
+【小结】
+
+`itertools` 模块提供的全部是处理迭代功能的函数，它们的返回值不是list，而是Iterator，只有用for循环迭代的时候才真正计算。
+
+
+
+
+
+
+
 
 
 
