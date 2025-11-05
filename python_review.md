@@ -2933,15 +2933,156 @@ A ['A', 'A', 'a']
 
 `itertools` 模块提供的全部是处理迭代功能的函数，它们的返回值不是list，而是Iterator，只有用for循环迭代的时候才真正计算。
 
+##### 8. contextlib
 
+Python的 `with` 语句允许我们非常方便地使用资源，而不必担心资源没有关闭：
 
+```python
+with open('/path/to/file', 'r') as f:
+	f.read()
+```
 
+但并不是只有 `open()` 函数返回的fp对象才能使用 `with` 语句。实际上，任何对象，只要正确实现了上下文管理，就可以用于 `with` 语句。 实现上下文管理是通过 `__enter__` 和 `__exit__` 这两个方法实现的。例如，下面的class实现了这两个方法：
 
+```python
+class Query:
+    def __init__(self, name):
+        self.name = name
+    def __enter__(self):
+        print('Begain')
+        return self
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            print('Error')
+        else:
+            print('End')
+    def query(self):
+        print(f'Query info about {self.name}...')
+```
 
+这样，我们就可以把自己写的资源对象用于 `with` 语句：
 
+```python
+with Query('Bob') as q:
+    q.query()
+```
 
+编写 `__enter__` 和 `__exit__` 仍然很繁琐，因此Python的标准库 `contextlib` 提供了更简单的写法，上面的代码可以改写如下：
 
+```python
+from contextlib import contextmanager
 
+class Query(object):
+    def __init__(self, name):
+        self.name = name
+    def query(self):
+        print('Query info about %s...' % self.name)
+
+@contextmanager
+def create_query(name):
+    print('Begin')
+    q = Query(name)
+    yield q
+    print('End')
+
+with create_query('Bob') as q:
+    q.query()
+```
+
+`@contextmanager` 这个decorator接受一个generator，用 `yield` 语句把 `with ... as var` 把变量输出出去，然后， `with` 语句就可以正常地工作了。
+
+很多时候，我们希望在某段代码执行前后自动执行特定代码，也可以用 `@contextmanager` 实现。例如：
+
+```python
+from contextlib import contextmanager
+@contextmanager
+def tag(name):
+	print("<%s>" % name)
+	yield
+	print("</%s>" % name)
+
+with tag("h1"):
+	print("hello")
+	print("world")
+```
+
+上面代码的执行结果为：
+
+```python
+<h1>
+hello
+world
+</h1>
+```
+
+代码的执行顺序是：
+
+1. `with` 语句首先执行 `yield` 之前的语句，因此打印出 `<h1>` ;
+2. `yield` 调用会执行 `with` 语句内部的所有语句，因此打印出 `hello` 和 `world` ；
+3. 最后执行 `yield` 之后的语句，打印出 `</h1>` 。
+
+因此， `@contextmanager` 让我们通过编写generator来简化上下文管理。
+
+##### 9. venv
+
+`venv` 为应用提供了隔离的Python运行环境，解决了不同应用间安装多版本的冲突问题。
+
+首先，我们假定要开发一个新的项目 `project01` ，需要一套独立的Python运行环境，可以这 么做： 
+
+1. 创建目录，这里把Python虚拟运行环境命名为 `proj01env` ，因此目录名为 `proj01env` ：
+
+```
+$ mkdir proj01env
+$ cd proj01env/
+proj01env$
+```
+
+2. 创建一个独立的Python运行环境：
+
+```
+proj01env$ python3 -m venv .
+```
+
+查看当前目录，可以发现有几个文件夹和一个 `pyvenv.cfg` 文件：
+
+```
+proj01env$ ls
+bin include lib pyvenv.cfg
+```
+
+命令 `python3 -m venv <目录>` 就可以创建一个独立的Python运行环境。观察 `bin` 目录的内容，里面有 `python3` 、 `pip3` 等可执行文件，实际上是链接到Python系统目录的软链接。
+
+3. 继续进入 `bin` 目录，Linux/Mac用 `source activate` ，Windows用 `activate.bat` 激活该venv环境：
+
+```
+proj01env$ cd bin
+bin$ source activate
+(pro101env) bin$
+```
+
+注意到命令提示符变了，有个 `(proj01env)` 前缀，表示当前环境是一个名为 `proj01env` 的 Python环境。
+
+4. 下面正常安装各种第三方包，并运行 `python` 命令：
+
+```
+(proj101env) bin$ pip3 install jinja2
+...
+Successfully installed jinja2-xxx
+(proj101env) bin$ python3
+>>> import jinja2
+>>> exit()
+```
+
+在 `venv` 环境下，用 `pip` 安装的包都被安装到 `proj01env` 这个环境下，具体目录是 `proj01env/lib/python3.x/site-packages` ，因此，系统Python环境不受任何影响。也就是说， `proj01env` 环境是专门针对 `project01` 这个应用创建的。 
+
+5. 退出当前的 `proj01env` 环境，使用 `deactivate` 命令：
+
+```
+(proj101env) bin$ deactivate
+bin$
+```
+
+此时就回到了正常的环境，现在继续 `pip` 或 `python` 均是在系统Python环境下执行。
 
 
 
