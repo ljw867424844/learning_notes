@@ -3084,9 +3084,121 @@ bin$
 
 此时就回到了正常的环境，现在继续 `pip` 或 `python` 均是在系统Python环境下执行。
 
+### 常用第三方模块
 
+##### 1. Pillow
 
+PIL：Python Imaging Library，已经是Python平台事实上的图像处理标准库了。PIL功能非常强大，但API却非常简单易用。 由于PIL仅支持到Python 2.7，加上年久失修，于是一群志愿者在PIL的基础上创建了兼容的版本，名字叫Pillow，支持最新Python 3.x，又加入了许多新特性。
 
+`PIL` 提供了操作图像的强大功能，可以通过简单的代码完成复杂的图像处理：
+
+- 安装 Pillow
+
+```bash
+pip install Pillow
+```
+
+- 打开和显示图片： `open()` 和 `show()`
+
+```python
+from PIL import Image
+
+# 打开图片
+img = Image.open("example.jpg")
+
+# 显示图片
+img.show()
+
+# 查看基本信息
+print(img.format, img.size, img.mode)
+```
+
+- 保存图片： `save()`
+
+```python
+img.save("output.png")  # 保存为PNG格式
+```
+
+- 图像格式转换： `convert()`
+
+```python
+img = Image.open("example.jpg")
+img.convert("L").save("gray.png")  # 转换为灰度图
+```
+
+其他功能如切片、旋转、滤镜、输出文字、调色板等一应俱全。
+
+##### 2. Requests
+
+`requests` 是Python中最常用、最优雅的HTTP网络请求库之一，广泛用于网页爬取、API调用、接口测试等场景。
+
+- 发送GET请求：
+
+```python
+import requests
+
+response = requests.get("https://api.github.com")
+print(response.text)
+```
+
+对于带参数的URL，传入一个字典作为参数：
+
+```python
+>>> r = requests.get('https://www.douban.com/search', params={'q':'python','cat':'1001'})
+>>> r.url
+'https://www.douban.com/search?q=python&cat=1001'
+```
+
+- 发送POST请求：
+
+```python
+login_data = {"username": "admin", "password": "123456"}
+response = requests.post("https://example.com/login", data=login_data)
+```
+
+`requests` 默认使用 `application/x-www-form-urlencoded` 对POST数据编码。如果要传递JSON数据，可以直接传入json参数：
+
+```python
+my_data = {'key': 'value'}
+r = requests.post(url, json=my_data) # 内部自动序列化为JSON
+```
+
+类似的，如果要上传文件，这将需要更复杂的编码格式，但是 `requests` 把它简化成 `files` 参数：
+
+```python
+files = {"file": open("test.png", "rb")}
+r = requests.post("https://example.com/upload", files=files)
+```
+
+注意，在读取文件时，务必使用 '`rb'` 即二进制模式读取，这样获取的字节长度才是文件的长度。
+
+此外，把 `post()` 方法替换为 `put()` ， `delete()` 等，就可以以PUT或DELETE方式请求资源。
+
+- 一些常用参数：
+
+| 参数      | 说明                                          | 示例                                                         |
+| --------- | --------------------------------------------- | ------------------------------------------------------------ |
+| `params`  | URL 查询参数                                  | `requests.get(url, params={"q": "python"})`                  |
+| `data`    | 表单数据（application/x-www-form-urlencoded） | `requests.post(url, data={"key":"value"})`                   |
+| `json`    | 发送 JSON 数据                                | `requests.post(url, json={"name": "GPT"})`                   |
+| `headers` | 自定义请求头                                  | `requests.get(url, headers={"User-Agent": "MyApp"})`         |
+| `cookies` | 发送 cookies                                  | `requests.get(url, cookies={"sessionid": "abc123"})`         |
+| `timeout` | 超时时间（秒）                                | `requests.get(url, timeout=5)`                               |
+| `proxies` | 使用代理                                      | `requests.get(url, proxies={"http": "http://127.0.0.1:8080"})` |
+
+- 获取响应内容
+
+```python
+r = requests.get("https://jsonplaceholder.typicode.com/todos/1")
+
+print(r.text)        # 原始文本
+print(r.json())      # 解析为 JSON 对象
+print(r.status_code) # 状态码
+print(r.url)         # 最终 URL
+print(r.headers)     # 响应头
+```
+
+##### 3. chardet
 
 
 
