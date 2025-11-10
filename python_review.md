@@ -1,4 +1,4 @@
-### 1. Python基础
+### Python基础
 
 ##### 1. 缩进
 
@@ -154,7 +154,7 @@ set和dict的唯一区别仅在于没有存储对应的value。但是，set的�
 'abc
 ```
 
-### 2. 函数
+### 函数
 
 ##### 1. 调用函数
 
@@ -230,7 +230,7 @@ def fact_tail(n, acc=1):
 
 使用递归函数的优点是逻辑简单清晰，缺点是过深的调用会导致栈溢出。
 
-### 3. 高级特性
+### 高级特性
 
 ##### 1. 切片
 
@@ -383,7 +383,7 @@ def fib(max):
 | 功能     | 只能 `next()`                       | 支持 `next()`、`send()`、`throw()`、`close()` |
 | 适用场景 | 复杂迭代逻辑，面向对象封装          | 流式数据、简单顺序逻辑、协程                  |
 
-### 4. 函数式编程
+### 函数式编程
 
 ##### 1. 函数作为参数
 
@@ -570,7 +570,7 @@ finally:
 
 `with` 就是try/finally的语法糖。
 
-### 5. 面向对象编程
+### 面向对象编程
 
 ##### 1. 类和实例
 
@@ -766,7 +766,7 @@ Student
 
 不要对实例属性和类属性使用相同的名字，否则将产生难以发现的错误。
 
-### 6. 面向对象高级编程
+### 面向对象高级编程
 
 ##### 1. 使用 `__slots__`
 
@@ -1176,7 +1176,7 @@ Hello, world.
 
 mataclass部分的内容先省略。
 
-### 7. 错误、调试和测试
+### 错误、调试和测试
 
 ##### 1. 错误处理
 
@@ -1466,7 +1466,7 @@ if __name__ == '__main__':
 
 doctest不但可以用来测试，还可以直接作为示例代码。通过某些文档生成工具，就可以自动把包含doctest的注释提取出来。用户看文档的时候，同时也看到了doctest。
 
-### 8. IO编程
+### IO编程
 
 ##### 1. 文件读写
 
@@ -1740,7 +1740,7 @@ print(json_str)
 
 Python语言特定的序列化模块是 `pickle` ，但如果要把序列化搞得更通用、更符合Web标准， 就可以使用 `json` 模块。 `json` 模块的 `dumps()` 和 `loads()` 函数是定义得非常好的接口的典范。当我们使用时，只需要传入一个必须的参数。但是，当默认的序列化或反序列机制不满足我们的要求时，我们又可以传入更多的参数来定制序列化或反序列化的规则，既做到了接口简单易用，又做到了充分的扩展性和灵活性。
 
-### 9. 进程和线程
+### 进程和线程
 
 ##### 1. 多进程
 
@@ -1993,7 +1993,7 @@ t2.join()
 
 一个 `ThreadLocal` 变量虽然是全局变量，但每个线程都只能读写自己线程的独立副本，互不干扰。 `ThreadLocal` 解决了参数在一个线程中各个函数之间互相传递的问题。
 
-### 10. 正则表达式
+### 正则表达式
 
 正则表达式是一种用来匹配字符串的强有力的武器。它的设计思想是用一种描述性的语言来给字 符串定义一个规则，凡是符合规则的字符串，我们就认为它“匹配”了，否则，该字符串就是不合法的。
 
@@ -2146,7 +2146,7 @@ else:
 ('010', '8086')
 ```
 
-### 11. 常用内建模块
+### 常用内建模块
 
 ##### 1. datetime
 
@@ -3084,7 +3084,7 @@ bin$
 
 此时就回到了正常的环境，现在继续 `pip` 或 `python` 均是在系统Python环境下执行。
 
-### 12. 常用第三方模块
+### 常用第三方模块
 
 ##### 1. Pillow
 
@@ -3230,96 +3230,31 @@ print(r.headers)     # 响应头
 
 可见，用 `chardet` 检测编码，使用简单。获取到编码后，再转换为 `str `，就可以方便后续处理。
 
-### 13. 图像界面
+### 网络编程
 
-Python支持多种图形界面的第三方库，包括： 
+##### 1. TCP/IP简介
 
-- Tk 
-- wxWidgets
-- Qt
-- GTK 
-- 等等。 
+虽然大家现在对互联网很熟悉，但是计算机网络的出现比互联网要早很多。 
 
-Python自带的库是支持Tk的Tkinter，使用Tkinter，无需安装任何包，就可以直接使用。本章简单介绍如何使用Tkinter进行GUI编程。
+计算机为了联网，就必须规定通信协议，早期的计算机网络，都是由各厂商自己规定一套协议， IBM、Apple和Microsoft都有各自的网络协议，互不兼容，这就好比一群人有的说英语，有的说中文，有的说德语，说同一种语言的人可以交流，不同的语言之间就不行了。
 
-我们来梳理一下概念： 
+为了把全世界的所有不同类型的计算机都连接起来，就必须规定一套全球通用的协议，为了实现互联网这个目标，互联网协议簇（Internet Protocol Suite）就是通用协议标准。Internet是由inter和net两个单词组合起来的，原意就是连接“网络”的网络，有了Internet，任何私有网络，只要支持这个协议，就可以联入互联网。 
 
-我们编写的Python代码会调用内置的Tkinter，Tkinter封装了访问Tk的接口； 
+因为互联网协议包含了上百种协议标准，但是最重要的两个协议是TCP和IP协议，所以，大家把互联网的协议简称TCP/IP协议。
 
-- Tk是一个图形库，支持多个操作系统，使用Tcl语言开发； 
+通信的时候，双方必须知道对方的标识，好比发邮件必须知道对方的邮件地址。互联网上每个计算机的唯一标识就是IP地址，类似 123.123.123.123 。如果一台计算机同时接入到两个或更多的网络，比如路由器，它就会有两个或多个IP地址，所以，IP地址对应的实际上是计算机的网络接口，通常是网卡。
 
-- Tk会调用操作系统提供的本地GUI接口，完成最终的GUI。
+IP协议负责把数据从一台计算机通过网络发送到另一台计算机。数据被分割成一小块一小块，然后通过IP包发送出去。由于互联网链路复杂，两台计算机之间经常有多条线路，因此，路由器就负责决定如何把一个IP包转发出去。IP包的特点是按块发送，途径多个路由，但不保证能到达， 也不保证顺序到达。
 
-- 所以，我们的代码只需要调用Tkinter提供的接口就可以了。
+IP地址实际上是一个32位整数（称为IPv4），以字符串表示的IP地址如 192.168.0.1 实际上是 把32位整数按8位分组后的数字表示，目的是便于阅读。
 
-使用Tkinter十分简单，我们来编写一个GUI版本的 `“Hello, world!”`:
+IPv6地址实际上是一个128位整数，它是目前使用的IPv4的升级版，以字符串表示类似于 2001:0db8:85a3:0042:1000:8a2e:0370:7334 。
 
-第一步是导入Tkinter包的所有内容：
+TCP协议则是建立在IP协议之上的。TCP协议负责在两台计算机之间建立可靠连接，保证数据包按顺序到达。TCP协议会通过握手建立连接，然后，对每个IP包编号，确保对方按顺序收到，如果包丢掉了，就自动重发。许多常用的更高级的协议都是建立在TCP协议基础上的，比如用于浏览器的HTTP协议、发送邮件的SMTP协议等。
 
-```python
-from tkinter import *
-```
+一个TCP报文除了包含要传输的数据外，还包含源IP地址和目标IP地址，源端口和目标端口。 
 
-第二步是从 `Frame` 派生一个 `Application` 类，这是所有Widget的父容器：
+端口有什么作用？在两台计算机通信时，只发IP地址是不够的，因为同一台计算机上跑着多个网络程序。一个TCP报文来了之后，到底是交给浏览器还是QQ，就需要端口号来区分。每个网络程序都向操作系统申请唯一的端口号，这样，两个进程在两台计算机之间建立网络连接就需要各自的IP地址和各自的端口号。一个进程也可能同时与多个计算机建立链接，因此它会申请很多端口。
 
-```python
-class Application(Frame):
-	def __init__(self, master=None):
-		Frame.__init__(self, master)
-		self.pack()
-		self.createWidgets()
-	def createWidgets(self):
-		self.helloLabel = Label(self, text='Hello, world!')
-		self.helloLabel.pack()
-		self.quitButton = Button(self, text='Quit', command=self.quit)
-		self.quitBut
-```
+了解了TCP/IP协议的基本概念，IP地址和端口的概念，我们就可以开始进行网络编程了。
 
-`pack()` 方法把Widget加入到父容器中，并实现布局。 `pack()` 是最简单的布局， `grid()` 可以实现更复杂的布局。
-
-在 `createWidgets()` 方法中，我们创建一个 `Label` 和一个 `Button` ，当Button被点击时，触发 `self.quit()` 使程序退出。 
-
-第三步，实例化 `Application` ，并启动消息循环：
-
-```python
-app = Application()
-# 设置窗口标题:
-app.master.title('Hello World')
-# 主消息循环:
-app.mainloop()
-```
-
-GUI程序的主线程负责监听来自操作系统的消息，并依次处理每一条消息。因此，如果消息处理非常耗时，就需要在新线程中处理。
-
-再对这个GUI程序改进一下，加入一个文本框，让用户可以输入文本，然后点按钮后，弹出消息对话框。
-
-```python
-from tkinter import *
-import tkinter.messagebox as messagebox
-
-class Application(Frame):
-	def __init__(self, master=None):
-		Frame.__init__(self, master)
-		self.pack()
-		self.createWidgets()
-	def createWidgets(self):
-		self.nameInput = Entry(self)
-		self.nameInput.pack()
-		self.alertButton = Button(self, text='Hello', command=self.hello)
-		self.alertButton.pack()
-	def hello(self):
-		name = self.nameInput.get() or 'world'
-		messagebox.showinfo('Message', 'Hello, %s' % name)
-
-app = Application()
-# 设置窗口标题:
-app.master.title('Hello World')
-# 主消息循环:
-app.mainloop()
-```
-
-当用户点击按钮时，触发 `hello()` ，通过 `self.nameInput.get()` 获得用户输入的文本后，使用 `tkMessageBox.showinfo()` 可以弹出消息对话框。
-
-【小结】
-
-Python内置的Tkinter可以满足基本的GUI程序的要求，如果是非常复杂的GUI程序，建议用操作系统原生支持的语言和库来编写。
