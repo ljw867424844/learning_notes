@@ -25,3 +25,4 @@ elif bmi < 32:
     print(f'小明的BMI指数为{bmi},属于肥胖。')
 else:
     print(f'小明的BMI指数为{bmi},属于严重肥胖。')
+

@@ -38,3 +38,4 @@ while True:
     print(f"你输入的平方是：{num ** 2}")
 
 """
+
