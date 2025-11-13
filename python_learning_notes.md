@@ -416,13 +416,13 @@ set可以看成数学意义上的无序和无重复元素的集合，因此，�
 'abc
 ```
 
-### 函数
+### 二、函数
 
 ##### 1. 调用函数
 
-Python内置了很多有用的函数，我们可以直接调用。
+要调用一个函数，需要知道函数的名称和参数。
 
-调用函数的时候，如果传入的参数数量不对，会报 `TypeError` 的错误，并且Python会明确地告 诉你： `abs()` 有且仅有1个参数，但给出了两个：
+调用函数的时候，如果传入的参数数量不对，会报 `TypeError` 的错误，并且Python会明确地告诉你： `abs()` 有且仅有1个参数，但给出了两个：
 
 ```python
 >>> abs(1, 2)
@@ -431,7 +431,7 @@ Traceback (most recent call last):
 TypeError: abs() takes exactly one argument (2 given)
 ```
 
-如果传入的参数数量是对的，但参数类型不能被函数所接受，也会报 `TypeError` 的错误，并且 给出错误信息：
+如果传入的参数数量是对的，但参数类型错了，也会报 `TypeError` 的错误，并且给出错误信息：
 
 ```python
 >>> abs('a')
@@ -442,61 +442,126 @@ TypeError: bad operand type for abs(): 'str'
 
 ##### 2. 定义函数
 
-定义函数时，需要确定函数名和参数个数；如果有必要，可以先对参数的数据类型做检查；
+定义函数时，需要确定函数名和参数个数，如下例：
+
+```python
+def my_abs(x):
+    if x >= 0:
+        return x
+    else:
+        return -x
+
+print(my_abs(-99))
+```
 
 函数体内部的语句在执行时，一旦执行到 `return` 时，函数就执行完毕，并将结果返回。因此，函数内部通过条件判断和循环可以实现非常复杂的逻辑。
 
 如果没有 `return` 语句，函数执行完毕后也会返回结果，只是结果为 `None` 。 `return None` 可以简写为 `return` 。
 
-函数可以返回多个值，返回值是一个tuple！但是，在语法上，返回一个tuple可以省略括号，而多个变量可以同时接收一个tuple，按位置赋给对应的值，所以，Python的函数返回多值其实就是返回一个tuple， 但写起来更方便。
+如果有必要，可以先对参数的数据类型做检查；为什么要做参数检查？
+
+调用函数时，如果参数个数不对，Python解释器会自动检查出来，并抛出 `TypeError` ：
+
+```python
+>>> my_abs(1, 2)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: my_abs() takes 1 positional argument but 2 were given
+```
+
+但是，如果参数类型不对，Python解释器就无法帮我们检查：
+
+```python
+>>> my_abs('A')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 2, in my_abs
+TypeError: unorderable types: str() >= int()
+>>> abs('A')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: bad operand type for abs(): 'str'
+```
+
+当传入了不恰当的参数时，内置函数 `abs` 会检查出参数错误，而我们定义的 `my_abs` 没有参数检查，会导致               `if` 语句出错，出错信息和 `abs` 不一样。所以，我们定义的这个函数还不够完善。
+
+现在来修改一下 `my_abs` 的定义，对参数类型做检查，只允许整数和浮点数类型的参数。数据类型检查可以用内置函数 `isinstance()` 实现：
+
+```python
+def my_abs(x):
+    if not isinstance(x, (int, float)):
+        raise TypeError('bad operand type')
+    if x >= 0:
+        return x
+    else:
+        return -x
+```
+
+添加了参数检查后，如果传入错误的参数类型，函数就可以抛出一个错误：
+
+```python
+>>> my_abs('A')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 3, in my_abs
+TypeError: bad operand type
+```
+
+此外，函数还可以返回多个值，返回值是一个tuple。
+
+```python
+import math
+
+def move(x, y, step, angle=0):
+    nx = x + step * math.cos(angle)
+    ny = y - step * math.sin(angle)
+    return nx, ny
+r = move(100, 100, 60, math.pi / 6)
+print(r)	# (151.96152422706632, 70.0)
+```
 
 ##### 3. 函数的参数
 
 - 位置参数。最常见的参数，按顺序传递。
-
-- 关键字参数。调用时用 ` 参数名=值` 的形式传递，顺序可以不固定。
-
-- 默认参数。在定义函数时给参数设置默认值，调用时可省略。默认参数必须指向不可变对象！
-
-- 可变位置参数。用 ` *` 收集任意个位置参数，传入函数时会打包成tuple。 
-
-- 可变关键字参数。用 ` **` 收集任意个关键字参数，传入函数时会打包成dict。
-
-- 仅限位置参数。在参数列表中使用 `/` 之前的参数必须用位置传递。
-
-- 仅限关键字参数。在参数列表中使用 `*` 之后的参数必须用关键字传递。
+- 默认参数。在定义函数时给参数设置默认值，调用时可省略。默认参数放在必选参数后面。默认参数必须指向不可变对象！
+- 可变位置参数。用*收集任意个位置参数，传入函数时会打包成tuple。 
+- 可变关键字参数。用**收集任意个关键字参数，传入函数时会打包成dict。
 
 ##### 4. 递归函数
 
-使用递归函数需要注意防止 **栈溢出**。在计算机中，函数调用是通过栈（stack）这种数据结构实现的，每当进入一个函数调用，栈就会加一层栈帧，每当函数返回，栈就会减一层栈帧。由于栈的大小不是无限的，所以，递归调用的次数过多，会导致栈溢出。
-
-普通递归（阶乘）：
+在函数内部，可以调用其他函数。如果一个函数在内部调用自身本身，这个函数就是递归函数。例如：
 
 ```python
 def fact(n):
-    if n == 1:
+    if n==1:
         return 1
-    return n * fact(n - 1)  # 递归调用后，还要再乘n
+    return n * fact(n - 1)
 ```
 
-解决递归调用栈溢出的方法是通过 **尾递归** 优化。尾递归是指，在函数返回的时候，调用自身本身，并且，return语句不能包含表达式。这样，编译器或者解释器就可以把尾递归做优化，使递归本身无论调用多少次，都只占用一个栈帧，不会出现栈溢出的情况。
+如果我们计算`fact(5)`，根据函数定义可以看到计算过程如下：
 
-尾递归版本（阶乘）：
-
-```python
-def fact_tail(n, acc=1):
-    if n == 1:
-        return acc
-    return fact_tail(n - 1, n * acc)  # 最后一步就是调用自身
+```
+=> fact(5)
+=> 5 * fact(4)
+=> 5 * (4 * fact(3))
+=> 5 * (4 * (3 * fact(2)))
+=> 5 * (4 * (3 * (2 * fact(1))))
+=> 5 * (4 * (3 * (2 * 1)))
+=> 5 * (4 * (3 * 2))
+=> 5 * (4 * 6)
+=> 5 * 24
+=> 120
 ```
 
-使用递归函数的优点是逻辑简单清晰，缺点是过深的调用会导致栈溢出。
+递归函数的优点是定义简单，逻辑清晰。理论上，所有的递归函数都可以写成循环的方式，但循环的逻辑不如递归清晰。
 
-### 高级特性
+### 三、高级特性
+
+在Python中，代码不是越多越好，而是越少越好。代码不是越复杂越好，而是越简单越好。基于这一思想，我们来介绍Python中非常有用的高级特性，1行代码能实现的功能，决不写5行代码。请始终牢记，代码越少，开发效率越高。
 
 ##### 1. 切片
 
-在Python里，**切片（slice）** 是一种从 **序列（sequence）类型对象**（比如 `list` 、 `tuple` 、 `str`）中，按指定范围提取子序列的操作。他的基本语法是：
+在很多编程语言中，针对字符串提供了很多各种截取函数（例如，substring），其实目的就是对字符串切片。Python没有针对字符串的截取函数，只需要切片一个操作就可以完成，非常简单。基本语法是：
 
 ```python
 sequence[start:stop:step]
@@ -516,7 +581,7 @@ sequence[start:stop:step]
 
 ##### 2. 迭代
 
-通过 **for 循环** 来依次访问可迭代对象里的元素，直到结束。这种遍历我们称为 **迭代**。
+通过for 循环来依次访问可迭代对象里的元素，直到结束。这种遍历我们称为迭代。
 
 为什么要迭代？
 
