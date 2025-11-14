@@ -581,13 +581,54 @@ sequence[start:stop:step]
 
 ##### 2. 迭代
 
-通过for 循环来依次访问可迭代对象里的元素，直到结束。这种遍历我们称为迭代。
+通过for循环来依次访问可迭代对象里的元素，直到结束，这种遍历我们称为迭代。例如：
+
+```python
+>>> d = {'a': 1, 'b': 2, 'c': 3}
+>>> for key in d:
+...     print(key)
+...
+a
+c
+b
+```
+
+因为dict的存储不是按照list的方式顺序排列，所以，迭代出的结果顺序很可能不一样。
+
+默认情况下，dict迭代的是key。如果要迭代value，可以用 `for value in d.values()` ，如果要同时迭代key和value，可以用 `for k, v in d.items()` 。
+
+如何判断一个对象是可迭代对象呢？
+
+方法是通过 `collections.abc` 模块的 `Iterable` 类型判断：
+
+```python
+>>> from collections.abc import Iterable
+>>> isinstance('abc', Iterable) # str是否可迭代
+True
+>>> isinstance([1,2,3], Iterable) # list是否可迭代
+True
+>>> isinstance(123, Iterable) # 整数是否可迭代
+False
+```
+
+如果要对list实现类似Java那样的下标循环怎么办？
+
+Python内置的 `enumerate` 函数可以把一个list变成”索引-元素“对，这样就可以在for循环中同时迭代索引和元素本身：
+
+```python
+>>> for i, value in enumerate(['A', 'B', 'C']):
+...     print(i, value)
+...
+0 A
+1 B
+2 C
+```
 
 为什么要迭代？
 
 - 代码简洁：不用手动处理下标。
 - 节省内存：像生成器那样惰性迭代。
-- 统一接口：不同类型（list、tuple、set）都可以用同样的 `for` 遍历。
+- 统一接口：不同类型（list、tuple、set）都可以用同样的for遍历。
 
 ##### 3. 列表推导式
 
@@ -603,54 +644,50 @@ sequence[start:stop:step]
 - `item`：可迭代对象中的元素
 - `condition`：筛选条件（可选）
 
-缺点：一次性创建完整列表，占用内存
-
-##### 4. 迭代器
-
-可以直接作用于 for 循环的对象统称为可迭代对象（Iterable）。 可以使用 `isinstance()` 判断一个对象是否是可迭代对象：
+for循环其实可以同时使用两个甚至多个变量，比如dict的 `items()` 可以同时迭代key和value：
 
 ```python
->>> from collections.abc import Iterable
->>> isinstance([], Iterable)
-True
->>> isinstance({}, Iterable)
-True
->>> isinstance('abc', Iterable)
-True
->>> isinstance((x for x in range(10)), Iterable)
-True
->>> isinstance(100, Iterable)
-False
+>>> d = {'x': 'A', 'y': 'B', 'z': 'C' }
+>>> for k, v in d.items():
+...     print(k, '->', v)
+...
+y -> B
+x -> A
+z -> C
 ```
 
-可以被 `next()` 函数调用并不断返回下一个值的对象称为 **迭代器（Iterator）**。 可以使用 `isinstance() `判断一个对象是否是迭代器：
+因此，列表生成式也可以使用两个变量来生成list：
 
 ```python
->>> from collections.abc import Iterator
->>> isinstance((x for x in range(10)), Iterator)
-True
->>> isinstance([], Iterator)
-False
->>> isinstance({}, Iterator)
-False
->>> isinstance('abc', Iterator)
-False
+>>> d = {'x': 'A', 'y': 'B', 'z': 'C' }
+>>> [k + '->' + v for k, v in d.items()]
+['y->B', 'x->A', 'z->C']
 ```
 
-list、dict、str虽然是可迭代对象，却不是迭代器。 把list、dict、str等可迭代对象变成迭代器可以使用 `iter()` 函数：
+把一个list中所有的字符串变成小写：
 
 ```python
->>> isinstance(iter([]), Iterator)
-True
->>> isinstance(iter('abc'), Iterator)
-True
+>>> L = ['Hello', 'World', 'IBM', 'Apple']
+>>> [s.lower() for s in L]
+['hello', 'world', 'ibm', 'apple']
 ```
 
-##### 5. 生成器
+for后面的if不能加上else，因为这里的if是一个筛选条件。
 
-生成器（generator）是一种特殊的迭代器。
+for前面的if必须加上else，因为这里是一个表达式，它必须根据x计算出一个结果。
 
-要创建一个generator，有很多种方法。第一种方法很简单，使用 **生成器表达式**。只要把一个列表推导式的 `[]` 改成` ()` ，就创建了一个generator。
+```python
+>>> [x if x % 2 == 0 else -x for x in range(1, 11)]
+[-1, 2, -3, 4, -5, 6, -7, 8, -9, 10]
+```
+
+##### 4. 生成器
+
+通过列表生成式，我们可以直接创建一个列表。但是，受到内存限制，列表容量肯定是有限的。而且，创建一个包含100万个元素的列表，不仅占用很大的存储空间，如果我们仅仅需要访问前面几个元素，那后面绝大多数元素占用的空间都白白浪费了。
+
+在Python中，一边循环一边计算，惰性生成的这种机制，称为生成器（generator）。
+
+创建一个generator，第一种方法是使用生成器表达式。只要把一个列表推导式的 `[]` 改成 ` ()` ，就创建了一个generator。
 
 ```python
 >>> L = [x * x for x in range(5)]
@@ -661,7 +698,7 @@ True
 <generator object <genexpr> at 0x1022ef630>
 ```
 
-通过 `next()` 函数获得 generator 的下一个返回值:
+`L` 是一个list，而 `g` 是一个generator。我们可以直接打印出 `L` 的每一个元素，但对于 `g` 需要通过 `next()` 函数获得generator的下一个返回值。
 
 ```python
 >>> next(g)
@@ -680,37 +717,167 @@ Traceback (most recent call last):
 StopIteration
 ```
 
-generator保存的是算法，每次调用 `next(g)` ，就计算出 `g` 的下一个元素的值，直到计算到最后一个元素，没有更多的元素时，抛出 **StopIteration** 的错误。
+generator保存的是算法，每次调用 `next(g)` ，就计算出 `g` 的下一个元素的值，直到计算到最后一个元素，没有更多的元素时，抛出 `StopIteration` 的错误。
 
-第二种方法为使用 **生成器函数** 。如果一个函数定义中包含 `yield` 关键字，那么这个函数就不再是一个普通函数，而是一个生成器函数。调用一个生成器函数将返回一个生成器：
+当然，也可以使用 `for` 循环去获取generator的值。
+
+```python
+>>> g = (x * x for x in range(5))
+>>> for n in g:
+...     print(n)
+... 
+0
+1
+4
+9
+16
+```
+
+如果推算的算法比较复杂，比如斐波拉契数列用列表生成式写不出来，但是，用函数把它打印出来却很容易：
 
 ```python
 def fib(max):
     n, a, b = 0, 0, 1
-	while n < max:
-		yield b
- 		a, b = b, a + b
- 		n = n + 1
-	return 'done'
+    while n < max:
+        print(b)
+        a, b = b, a + b
+        n = n + 1
+    return 'done'
 ```
 
+运行结果如下：
+
 ```python
->>> f = fib(6)
+>>> fib(5)
+1
+1
+2
+3
+5
+'done'	# 仅在交互式环境下才打印
+```
+
+上面的函数和generator仅一步之遥。要把 `fib` 函数变成generator函数，只需要把 `print(b)` 改为 `yield b` 就可以了：
+
+```python
+def fib(max):
+    n, a, b = 0, 0, 1
+    while n < max:
+        yield b
+        a, b = b, a + b
+        n = n + 1
+    return 'done'
+```
+
+这就是定义generator的另一种方法。如果一个函数定义中包含`yield`关键字，那么这个函数就不再是一个普通函数，而是一个generator函数，调用一个generator函数将返回一个generator。
+
+```python
+>>> f = fib(5)
 >>> f
 <generator object fib at 0x104feaaa0>
 ```
 
 普通函数用 `return` 返回值后就结束了，而生成器函数在 `yield` 时会“暂停”，下次再调用时继续从上一次暂停的位置执行。
 
-| 特性     | 迭代器 (Iterator)                   | 生成器 (Generator)                            |
-| -------- | ----------------------------------- | --------------------------------------------- |
-| 定义方式 | 写类，定义 `__iter__` 和 `__next__` | 函数里用 `yield` 或生成器表达式               |
-| 本质     | 遵循迭代器协议的对象                | 特殊的迭代器（语法糖）                        |
-| 使用难度 | 繁琐，要维护状态                    | 简洁，Python 自动维护状态                     |
-| 功能     | 只能 `next()`                       | 支持 `next()`、`send()`、`throw()`、`close()` |
-| 适用场景 | 复杂迭代逻辑，面向对象封装          | 流式数据、简单顺序逻辑、协程                  |
+调用generator函数会创建一个generator对象，多次调用generator函数会创建多个相互独立的generator。
 
-### 函数式编程
+```python
+def odd():
+    print('step 1')
+    yield 1
+    print('step 2')
+    yield(3)
+    print('step 3')
+    yield(5)
+
+print(next(odd()))	
+print(next(odd()))	
+print(next(odd()))	
+```
+
+回到 `fib` 的例子，我们在循环过程中不断调用 `yield` ，就会不断中断。当然，要给循环设置一个条件来退出循环，不然就会产生一个无限数列出来。使用 `for` 循环来迭代，以便获取值。
+
+```python
+>>> for n in fib(5):
+...     print(n)
+...
+1
+1
+2
+3
+5
+```
+
+可以发现，用 `for` 循环调用generator时，拿不到generator的 `return` 语句的返回值。如果想要拿到返回值，必须捕获 `StopIteration` 错误，返回值包含在 `StopIteration `的 `value` 中：
+
+```python
+>>> g = fib(5)
+>>> while True:
+...     try:
+...         x = next(g)
+...         print('g:', x)
+...     except StopIteration as e:
+...         print('Generator return value:', e.value)
+...         break
+...
+g: 1
+g: 1
+g: 2
+g: 3
+g: 5
+Generator return value: done
+```
+
+##### 5. 迭代器
+
+首先，可以直接作用于for循环的对象统称为可迭代对象（Iterable）。 可以使用 `isinstance()` 判断一个对象是否是可迭代对象：
+
+```python
+>>> from collections.abc import Iterable
+>>> isinstance([], Iterable)
+True
+>>> isinstance({}, Iterable)
+True
+>>> isinstance('abc', Iterable)
+True
+>>> isinstance((x for x in range(10)), Iterable)
+True
+>>> isinstance(100, Iterable)
+False
+```
+
+其次，可以被 `next()` 函数调用并不断返回下一个值的对象称为迭代器（Iterator）。
+
+```python
+>>> from collections.abc import Iterator
+>>> isinstance((x for x in range(10)), Iterator)
+True
+>>> isinstance([], Iterator)
+False
+>>> isinstance({}, Iterator)
+False
+>>> isinstance('abc', Iterator)
+False
+```
+
+list、dict、str虽然是Iterable，却不是Iterator。 可以使用 `iter()` 函数把list、dict、str等变成Iterator：
+
+```python
+>>> isinstance(iter([]), Iterator)
+True
+>>> isinstance(iter({}), Iterator)
+True
+>>> isinstance(iter('abc'), Iterator)
+True
+```
+
+为什么list、dict、str等数据类型不是Iterator？
+
+这是因为Python的Iterator对象表示的是一个数据流，Iterator对象可以被 `next()` 函数调用并不断返回下一个数据，直到没有数据时抛出 `StopIteration` 错误。可以把这个数据流看做是一个有序序列，但我们却不能提前知道序列的长度，只能不断通过 `next()` 函数实现按需计算下一个数据，所以 `Iterator` 的计算是惰性的，只有在需要返回下一个数据时它才会计算。
+
+Iterator甚至可以表示一个无限大的数据流，例如全体自然数。而使用list是永远不可能存储全体自然数的。
+
+### 四、函数式编程
 
 ##### 1. 函数作为参数
 
