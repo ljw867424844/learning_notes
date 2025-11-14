@@ -879,32 +879,90 @@ Iterator甚至可以表示一个无限大的数据流，例如全体自然数。
 
 ### 四、函数式编程
 
-##### 1. 函数作为参数
+##### 1. 高阶函数
+
+变量可以指向函数，函数名本身也是变量。
+
+```python
+>>> f = abs
+>>> f(-10)
+10
+>>> abs = 10
+>>> abs(-10)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'int' object is not callable
+```
+
+既然变量可以指向函数，函数的参数能接收变量，那么一个函数就可以接收另一个函数作为参数，这种函数就称之为高阶函数。
+
+```python
+def add(x, y, f):
+    return f(x) + f(y)
+
+print(add(-5, 6, abs))	# 11
+```
+
+Python内建了`map()`和`reduce()`函数。
 
 - map函数
 
 `map(func, iterable)`
 
-对序列中的每个元素应用函数，返回迭代器。
-
-ps：**序列一定是可迭代对象**，但并不是所有可迭代对象都是序列（例如：集合 `set`、字典 `dict` 是可迭代对象，但它们不是序列，因为无序且不能用下标取值）
+对序列中的每个元素应用函数，返回Iterator。如下例：
 
 ```python
-nums = [1, 2, 3, 4]
-print(list(map(lambda x: x*2, nums)))  # [2, 4, 6, 8]
+>>> def f(x):
+...     return x * x
+...
+>>> r = map(f, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+>>> list(r)
+[1, 4, 9, 16, 25, 36, 49, 64, 81]
 ```
+
+由于 `map()` 的结果是一个Iterator，是惰性序列，因此要通过 `list()` 函数让它把整个序列都计算出来并返回一个list。
 
 - reduce函数
 
 `reduce(func, iterable[, initializer])`
 
-把序列“累积”成一个结果。
+把序列“累积”成一个结果。如下例，把str转换为int的函数（替代 `int()` ）：
 
 ```python
 from functools import reduce
-nums = [1, 2, 3, 4]
-print(reduce(lambda x, y: x+y, nums))  # 10
+
+Dict = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
+
+def char2num(s):
+    return Dict[s]
+
+def str2int(s):
+    return reduce(lambda x, y: x * 10 + y, map(char2num, s))
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 - filter函数
 
