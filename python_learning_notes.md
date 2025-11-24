@@ -764,12 +764,12 @@ def fib(max):
     n, a, b = 0, 0, 1
     while n < max:
         yield b
-        a, b = b, a + b
+        a, b = b, a + b	# 多变量同时赋值, 新a=旧b & 新b=旧a+旧b 
         n = n + 1
     return 'done'
 ```
 
-这就是定义generator的另一种方法。如果一个函数定义中包含`yield`关键字，那么这个函数就不再是一个普通函数，而是一个generator函数，调用一个generator函数将返回一个generator。
+这就是定义generator的另一种方法。如果一个函数定义中包含 `yield` 关键字，那么这个函数就不再是一个普通函数，而是一个generator函数，调用一个generator函数将返回一个generator。
 
 ```python
 >>> f = fib(5)
@@ -926,43 +926,21 @@ Python内建了`map()`和`reduce()`函数。
 
 `reduce(func, iterable[, initializer])`
 
-把序列“累积”成一个结果。如下例，把str转换为int的函数（替代 `int()` ）：
+把序列“累积”成一个结果。如下例，写了一个自己的将str转换为int的函数（替代内置函数 `int()` ）：
 
 ```python
 from functools import reduce
 
-Dict = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
-
-def char2num(s):
-    return Dict[s]
-
+# char -> int
+def char2int(x):
+	return ord(x) - ord('0')
+# str -> int
 def str2int(s):
-    return reduce(lambda x, y: x * 10 + y, map(char2num, s))
+	return reduce(lambda x, y: x  * 10 + y, map(char2int, s))
+
+print(type(str2int('12345')))	# <class 'int'>
+print(str2int('12345') == 12345)	# True
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 - filter函数
 
@@ -973,6 +951,21 @@ def str2int(s):
 ```python
 nums = [1, 2, 3, 4, 5]
 print(list(filter(lambda x: x % 2 == 0, nums)))  # [2, 4]
+```
+
+埃氏筛法计算素数：
+
+```python
+def get_prime(n): 
+    nums = list(range(2, n + 1)) 
+    prime = [] 
+    while nums: 
+        p = nums[0] p
+        rime.append(p) 
+        nums = list(filter(lambda x, p=p: x % p > 0, nums[1:])) 
+    return prime 
+
+print(get_prime(100))
 ```
 
 - sorted函数
@@ -992,7 +985,9 @@ print(sorted(['bob', 'about', 'Zoo', 'Credit'], key=str.lower, reverse=True))
 
 高阶函数除了可以接受函数作为参数外，还可以把函数作为结果值返回。
 
-- 核心机制：依赖于 **闭包**（返回的函数会记住外层变量）。
+- 核心机制：依赖于闭包（Closure）
+
+闭包就是内层函数引用了外层函数的局部变量。使用闭包时，如果要在内层函数里面对外层变量赋值，需要先使用nonlocal声明该变量不是当前函数的局部变量。
 
 - 应用场景：函数工厂、延迟执行、装饰器等。
 
@@ -1011,8 +1006,6 @@ print(square(5))  # 25
 print(cube(2))    # 8
 ```
 
-`power` 返回的函数 `inner` 记住了外部变量 `exp`，这就是 **闭包**。
-
 延迟计算：
 
 ```python
@@ -1024,8 +1017,6 @@ def make_adder(x):
 add5 = make_adder(5)
 print(add5(10))  # 15
 ```
-
-返回的函数 `adder` 在需要的时候才执行。
 
 用于装饰器：
 
@@ -1043,35 +1034,57 @@ def hello():
 hello()
 ```
 
-`log` 返回了 `wrapper`，替代了原始函数。
-
 ##### 3. 装饰器
 
-在代码运行期间动态增加功能的方式，称之为“装饰器”。它的核心是：在不改动原函数的前提下，统一修改调用行为：
+装饰器（decorator）是一个“包装”函数的函数，用来在不修改原函数代码的前提下，为函数添加额外功能，相当于是给函数套了一层外壳。
+
+首先，decorator的本质是一个函数：
 
 ```python
-def log(func):
+def decorator(func):
     def wrapper(*args, **kwargs):
-        print(f"[前置] 即将调用 {func.__name__}")
+        # 执行前
         result = func(*args, **kwargs)
-        print(f"[后置] {func.__name__} 调用完毕")
+        # 执行后
         return result
     return wrapper
-
-@log
-def hello(person):
-    print(f"Hello,{person}")
-
-hello('Jiawen Li')
 ```
+
+`decorator(func)` 返回的 `wrapper` 会替代 `func`。
+
+返回的 `wrapper()` 函数名字就是 `'wrapper'` ，所以，需要把原始函数的 `__name__` 等属性复制到 `wrapper()` 函数中，否则，有些依赖函数签名的代码执行就会出错。使用内置装饰器 `@functools.wraps` 即可完成：
 
 ```python
-[前置] 即将调用 hello
-Hello,Jiawen Li
-[后置] hello 调用完毕
+import functools
+
+def greet(fn):
+    @functools.wraps(fn)   # 保留原函数名字
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        print('nihao~~')
+        return result
+    return wrapper
 ```
 
-ps：**语法糖（Syntactic Sugar）** 是编程语言里提供的一种写法，它不会增加新功能，只是让代码 更简洁、更易读。换句话说：“语法糖”就是把一段常用的写法，换一种 **更甜、更顺手** 的写法。
+其次，装饰器要能接收任意参数。使用 `*args` 和 `**kwargs` 的参数，这样装饰器可用于任何函数。
+
+另外，装饰器本身要接收参数时，需要多套一层函数。
+
+```python
+def repeat(times):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for _ in range(times):
+                func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+@repeat(3)
+def hello():
+    print("Hi")
+```
+
+ps：**语法糖（Syntactic Sugar）** 是编程语言里提供的一种写法，它不会增加新功能，只是让代码更简洁、更易读。
 
 - 装饰器语法糖
 
@@ -1089,7 +1102,7 @@ def hello():
 hello = log(hello)
 ```
 
-`@log` 就是语法糖 —— 少写一行 `hello = log(hello)`。
+`@log` 就是语法糖，让代码更漂亮。
 
 - 列表推导式
 
