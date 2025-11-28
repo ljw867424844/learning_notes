@@ -1084,7 +1084,7 @@ def hello():
     print("Hi")
 ```
 
-ps：**语法糖（Syntactic Sugar）** 是编程语言里提供的一种写法，它不会增加新功能，只是让代码更简洁、更易读。
+ps：语法糖（Syntactic Sugar）是编程语言里提供的一种写法，它不会增加新功能，只是让代码更简洁、更易读。
 
 - 装饰器语法糖
 
@@ -1135,39 +1135,37 @@ finally:
 
 `with` 就是try/finally的语法糖。
 
-### 面向对象编程
+### 五、面向对象编程
+
+面向对象编程——Object Oriented Programming，简称OOP，是一种程序设计思想。OOP把对象作为程序的基本单元，一个对象包含了数据和操作数据的函数。
 
 ##### 1. 类和实例
 
-类是创建实例的模板，而实例则是一个一个具体的对象，各个实例拥有的数据都互相独立，互不影响；
+面向对象最重要的概念就是类（Class）和实例（Instance），注意如下特点：
 
-方法就是与实例绑定的函数，和普通函数不同，方法可以直接访问实例的数据；
+- 类是创建实例的模板，而实例则是一个一个具体的对象，各个实例拥有的数据都互相独立，互不影响；
 
-通过在实例上调用方法，我们就直接操作了对象内部的数据，但无需知道方法内部的实现细节。
+- 方法就是与实例绑定的函数，和普通函数不同，方法可以直接访问实例的数据；
 
-值得注意的是，在Python里，对象的实例变量 **不需要预先声明类型**，也 **不受限制**，你可以随时给它赋值，不管是数字、字符串、列表，甚至函数、类都可以。简而言之，你可以**在运行时随时往对象里加属性，并赋予它任何数据**。
+- 通过在实例上调用方法，我们就直接操作了对象内部的数据，但无需知道方法内部的实现细节。
+
+- 和静态语言不同，Python允许对实例变量绑定任何数据，也就是说，对于两个实例变量，虽然它们都是同一个类的不同实例，但拥有的变量名称都可能不同：
 
 ```python
-class Demo:
-    pass
-
-d = Demo()
-
-# 动态绑定实例变量
-d.x = 10          # 绑定整数
-d.y = "hello"     # 绑定字符串
-d.z = [1, 2, 3]   # 绑定列表
-d.func = lambda a, b: a + b   # 绑定函数
-
-print(d.x)        # 10
-print(d.y)        # hello
-print(d.z)        # [1, 2, 3]
-print(d.func(2,3)) # 5
+>>> bart = Student('Bart Simpson', 59)
+>>> lisa = Student('Lisa Simpson', 87)
+>>> bart.age = 8
+>>> bart.age
+8
+>>> lisa.age
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'Student' object has no attribute 'age'
 ```
 
 ##### 2. 访问限制
 
-如果要让内部属性不被外部访问，可以把属性的名称前加上两个下划线 __ ，在Python中，实例的变量名如果以 __ 开头，就变成了一个 **私有变量（private）**，只有内部可以访问，外部不能访问。这样就确保了外部代码不能随意修改对象内部的状态，这样通过访问限制的保护，代码更加健壮。
+值得一提的是，面向对象编程的一个重要特点就是数据封装。如果要让内部属性不被外部访问，可以把属性的名称前加上两个下划线 __ ，在Python中，实例的变量名如果以 __ 开头，就变成了一个私有变量（private），只有内部可以访问，外部不能访问。
 
 ```python
 class Student(object):
@@ -1179,6 +1177,8 @@ class Student(object):
         print('%s: %s' % (self.__name, self.__score))
 ```
 
+改完后，对于外部代码来说，没什么变动，但是已经无法从外部访问 `实例变量.属性名` 了。 
+
 ```python
 >>> bart = Student('Bart Simpson', 59)
 >>> bart.__name
@@ -1187,7 +1187,9 @@ Traceback (most recent call last):
 AttributeError: 'Student' object has no attribute '__name'
 ```
 
-但是，如果外部代码要获取甚至修改 `name` 怎么办？此时，可以给Student类增加 `get_name` 和 `set_score` 这样的方法。
+这样就确保了外部代码不能随意修改对象内部的状态，这样通过访问限制的保护，代码更加健壮。
+
+那么问题来了，如果外部代码要获取甚至修改 `name` 怎么办？此时，可以给Student类增加 `get_name` 和 `set_score` 这样的方法。
 
 ```python
 def get_name(self):
@@ -1196,25 +1198,34 @@ def set_name(self,name):
     self.__name = name
 ```
 
-##### 3. 继承和多态
-
-继承可以把父类的所有功能都直接拿过来，这样就不必从零做起，子类只需要新增自己特有的方法，也可以把父类不适合的方法覆盖重写。
-
-对于静态语言（例如Java）来说，如果需要传入Animal类型，则传入的对象必须是Animal类型或者它的子类，否则，将无法调用 `run()` 方法。 对于Python这样的动态语言来说，则不一定需要传入Animal类型。我们只需要保证传入的对象有一个 `run()` 方法就可以了：
+有意义的一点是，在方法中，可以对参数做检查，避免传入无效的参数：
 
 ```python
-def Timer():
-    def run(self):
-        print('Start...')
+class Student(object):
+    ...
+
+    def set_score(self, score):
+        if 0 <= score <= 100:
+            self.__score = score
+        else:
+            raise ValueError('bad score')
 ```
 
-这就是动态语言的“鸭子类型”，它并不要求严格的继承体系，是一种“按行为来认定类型”的方式。一个对象只要“看起来像鸭子，走起 路来像鸭子”，那它就可以被看做是鸭子。
+##### 3. 继承和多态
+
+在OOP程序设计中，当我们定义一个class的时候，可以从某个现有的class继承，新的class称为子类（Subclass），而被继承的class称为基类、父类或超类（Base class、Super class）。
+
+继承最大的好处是子类获得了父类的全部功能，这样就不必从零做起，子类只需要新增自己特有的方法，也可以把父类不适合的方法覆盖重写。
+
+当子类和父类都存在相同的方法时，我们说，子类的方法覆盖了父类的方法，在代码运行的时候，总是会调用子类的方法。这样，我们就获得了继承的另一个好处：多态。
+
+对于一个变量，我们只需要知道它的父类，无需确切地知道它的子类，就可以放心地调用父类中方法，而具体调用的方法是作用在父类是子类对象上，由运行时该对象的确切类型决定。这就是多态真正的威力：调用方只管调用，不管细节，而当我们新增一种子类时，只要确保其方法编写正确，不用管原来的代码是如何调用的。
 
 ##### 4. 获取对象信息
 
 - 使用 `Type()` 函数
 
-基本类型都可以用 `type()` 判断，如果一个变量指向函数或者类，也可以用 `type()` 判断。
+基本类型都可以用 `type()` 判断，如果一个变量指向函数或者类，也可以判断。
 
 ```python
 >>> type(123)
@@ -1272,7 +1283,7 @@ True
 使用 `dir()` 函数，可以获得一个对象的所有属性和方法，它返回一个包含字符串的list。
 
 ```python
->>> dir('ABCDEFG')
+>>> dir('ABC')
 ['__add__', '__class__',..., '__subclasshook__', 'capitalize','casefold',..., 'zfill']
 ```
 
@@ -1285,19 +1296,11 @@ True
 3
 ```
 
-##### 5. 示例属性和类属性
+##### 5. 实例属性和类属性
 
-由于Python是动态语言，根据类创建的示例可以任意绑定属性。
+由于Python是动态语言，由类创建的示例可以任意绑定属性。
 
-**给实例绑定属性** 的方法是通过实例变量（前面已演示），或者通过self变量，如下：
-
-```python
-class Student(object):
-    def __init__(self, name):
-        self.name = name
-
-s = Student('Bob')
-```
+给实例绑定属性的方法，一是在内部通过self声明属性 `self.xxx = ...` ，二是在外部通过实例临时地绑定 `instance.xxx = ...` 。
 
 但是，如果Student类本身需要绑定一个属性呢？可以直接在class中定义属性，这种属性是类属性，归Student类所有：
 
@@ -1306,7 +1309,7 @@ class Student(object):
     name = 'Student'
 ```
 
-当我们定义了一个类属性后，这个属性虽然归类所有，但类的所有实例都可以访问到。来测试一 下：
+当我们定义了一个类属性后，这个属性虽然归类所有，但类的所有实例都可以访问到。值得一提的是，实例属性的优先级要比类属性的高，如下：
 
 ```python
 >>> class Student(object):
@@ -1327,40 +1330,50 @@ Student
 Student
 ```
 
-实例属性属于各个实例所有，互不干扰； 类属性属于类所有，所有实例共享一个属性；
+实例属性属于各个实例所有，互不干扰；
+
+类属性属于类所有，所有实例共享一个属性；
 
 不要对实例属性和类属性使用相同的名字，否则将产生难以发现的错误。
 
-### 面向对象高级编程
+### 六、面向对象高级编程
+
+数据封装、继承和多态只是面向对象程序设计中最基础的3个概念。在Python中，面向对象还有很多高级特性，允许我们写出非常强大的功能。
 
 ##### 1. 使用 `__slots__`
 
-Python允许在定义class的时候，定义一个特殊的 `__slots__` 变量， 来限制该class实例能添加的属性：
+`__slots__` 是 Python 中类的一个高级特性，用于限制实例能绑定的属性，并且提供内存优化和性能提升的能力。
+
+- 限制实例只能绑定指定属性
 
 ```python
-class Student(object):
-    __slots__ = ('name', 'age') # 用tuple定义允许绑定的属性名称
+class Person:
+    __slots__ = ('name', 'age')
+
+p = Person()
+p.name = 'Tom'   # OK
+p.age = 20       # OK
+p.address = 'Beijing'  # ❌ AttributeError：不能添加新属性
 ```
 
-然后，可以试一试：
+使用 `__slots__` 后，实例不能随意增加属性，可以避免误操作。
 
-```python
->>> s = Student() # 创建新的实例
->>> s.name = 'Michael' # 绑定属性'name'
->>> s.age = 25 # 绑定属性'age'
->>> s.score = 99 # 绑定属性'score'
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-AttributeError: 'Student' object has no attribute 'score'
-```
+- 节省内存
 
-使用 `__slots__` 要注意， `__slots__` 定义的属性仅对当前类实例起作用，对继承的子类是不 起作用的。
+默认情况下，每个实例都有一个字典 `__dict__` ，属性名作为key，属性值为value，这个dict会占用比较大内存。 但使用 `__slots__` 后，将不会创建 `__dict__` ，属性存储在固定的结构里，在使用大量实例时可以显著减少内存，节省比例常能达到40%~60%。
+
+值得一提的是，父类使用 `__slots__` 时，子类不会继承，必须重新声明。
 
 ##### 2. 使用 `@property`
 
-再给示例绑定属性的时候，如果我们直接把属性暴露出去，虽然写起来很简单，但是，没办法检查参数，导致可以把成绩随意修改。
+在给实例绑定属性的时候，如果我们直接把属性暴露出去，虽然写起来很简单，但是，没办法检查参数，导致可以把成绩随意修改。
 
-这显然不合逻辑。为了限制 score 的范围，可以通过一个 `set_score()` 方法来设置成绩，再通过一个 `get_score()` 来获取成绩，这样，在 `set_score()` 方法里，就可以检查参数：
+```python
+s = Student()
+s.score = 9999999
+```
+
+属性可以任意赋值，这显然不合逻辑。为了限制score的范围，可以通过一个 `set_score()` 方法来设置成绩，再通过一个 `get_score()` 来获取成绩，这样，在 `set_score()` 方法里，就可以进行参数检查：
 
 ```python
 class Student(object):
@@ -1372,58 +1385,44 @@ class Student(object):
         if value < 0 or value > 100:
             raise ValueError('score must between 0 ~ 100!')
         self._score = value
-
 ```
 
-但是，上面的调用方法又略显复杂，没有直接用属性这么直接简单。
+这是典型的Java式写法，但是，上面的调用方法还是略显复杂，没有直接用属性这么直接简单。
 
-`@property` 用于把方法伪装成属性，写法更自然。并且可以结合 `.setter` 和 `.deleter` 来控制属性的修改和删除。
+Python的 `@property` 把一个方法伪装成属性访问，并可加上验证逻辑，是最优雅的封装方式。
 
 ```python
-class Student(object):
+class A:
     @property
-    def score(self):
-        return self._score
-    @score.setter
-    def score(self, value):
-        if not isinstance(value, int):
-            raise ValueError('score必须是一个整数!')
-        if value < 0 or value > 100:
-            raise ValueError('score必须在0~100!')
-        self._score = value
-    @score.deleter
-    def score(self):
-        print("删除score属性")
-        del self._score
+    def x(self):
+        return self._x   # getter
+
+    @x.setter
+    def x(self, value):
+        self._x = value  # setter
 ```
 
-调用的方式如下：
+注意：属性方法名和实例变量重名，会造成递归调用，导致栈溢出报错！
 
-```python
-s = Student()
-s.score = 99 # setter
-print(s.score) # getter
-del s.score # deleter
-```
+`x` 是公开属性名（让别人访问）
+`_x` 是内部真正存储数据的变量（防止递归、保持封装）
 
-还可以定义只读属性，只定义getter方法，不定义setter方法就是一个只读属性：
+值得一提的是，还可以定义只读属性，只定义getter方法，不定义setter方法就是一个只读属性：
 
 ```python
 class Student:
     @property
-    def birth(self):
-        return self._birth
-    @birth.setter
-    def birth(self,value):
-        self._birth = value
-    @property
     def age(self):
-        return 2025 - self.birth
+        return 18
 ```
 
-上面的birth是可读写属性，而age就是一个只读属性，因为age可以根据birth和当前时间计算出来。
+调用如下：
 
-注意：属性方法名和实例变量重名，会造成递归调用，导致栈溢出报错！
+```python
+s = Student()
+print(s.age)     # 20
+s.age = 30       # ❌ 不能设置
+```
 
 ##### 3. 多重继承
 
